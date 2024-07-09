@@ -210,7 +210,7 @@ class ElectrolyteComposition:
         salts = cls.normalize_salt_dictionary({salt: salts_moles[salt] / (sum(list(solvents_mass.values()))) * 1000 for salt in salts_moles}, salt_decimals)
         cid = cls.dicts_to_CompositionID(solvents=solvents, salts=salts, solvent_precision=solvent_precision, salt_decimals=salt_decimals)
         d = {"solvents": solvents, "salts": salts, "CompositionID": cid, "solvent_precision": solvent_precision, "salt_decimals": salt_decimals}
-        print(f"### AEM-API v1.0:: CompositionID: {cid}")
+        print(f"### AEM-API v1.1:: CompositionID: {cid}")
         return cls(**d, specified_from=specified_from)
 
 ## AEM_API CLASS
@@ -304,6 +304,7 @@ class AEM_API:
     def generate_cues(self):
         self.cues = []
         self.params = {}  # Dictionary to store parameter names and their corresponding values
+        self.cues.append(1) # To allow ACCC access until CC fix
         self.cues.append(self.solventcomp)
         self.params["Solvent Composition"] = self.solventcomp
         self.cues.append(self.solventcomppropbasis)
@@ -346,10 +347,10 @@ class AEM_API:
         self.cues.append(self.dl)
         self.params["Double Layer (DL) Calculations"] = self.dl
         self.cues.append(0)
-        print(f"### AEM-API v1.0:: Input Parameters: {self.params}")
+        print(f"### AEM-API v1.1:: Input Parameters: {self.params}")
     # Method to run the AEM model
     def runAEM(self, quiet=True):
-        print(f"### AEM-API v1.0:: Starting Run {self.run_id}...")
+        print(f"### AEM-API v1.1:: Starting Run {self.run_id}...")
         if not self.cues:
             raise ValueError("cues not populated, run generate_cues first")
         # generate input byte string
@@ -362,7 +363,7 @@ class AEM_API:
             out = sys.stdout
         fp = os.path.join(self.AEMHomePath, self.aem_exe_filename)
         p = sp.Popen(fp, stdin=sp.PIPE, stdout=out, stderr=sp.STDOUT, cwd=self.AEMHomePath)
-        print(f"### AEM-API v1.0:: Run {self.run_id} Complete!")
+        print(f"### AEM-API v1.1:: Run {self.run_id} Complete!")
         p.communicate(inpb)
         self.save_run_log()
         self.copy_report_files()
@@ -379,7 +380,7 @@ class AEM_API:
         log_file = os.path.join(self.run_output_dir, f"AEMRun-{self.run_id}-{self.run_date}-{self.run_time}-Log.json")
         with open(log_file, 'w') as f:
             json.dump(log_data, f, indent=4)
-        print(f"### AEM-API v1.0:: Run {self.run_id}: Log saved to {log_file}")
+        print(f"### AEM-API v1.1:: Run {self.run_id}: Log saved to {log_file}")
         return None
     # Function to copy report files to run_output_dir
     def copy_report_files(self):
@@ -449,7 +450,7 @@ class AEM_API:
         self.data_processed = True
     # Function to save processed data  
     def save_processed_data(self):
-        print(f"### AEM-API v1.0:: Saving Combined and Processed Data for Run {self.run_id}...")
+        print(f"### AEM-API v1.1:: Saving Combined and Processed Data for Run {self.run_id}...")
         # Initialize an empty DataFrame to store all processed data
         all_data = pd.DataFrame()
         # Access, display, and save the processed data
@@ -464,13 +465,13 @@ class AEM_API:
         # Save the combined DataFrame to a single CSV file
         combined_csv_path = os.path.join(self.run_output_dir, f"{self.run_id}_CPD.csv")
         all_data.to_csv(combined_csv_path, index=False)
-        print(f"### AEM-API v1.0:: Combined and Processed Data for Run {self.run_id} saved to {combined_csv_path}")
+        print(f"### AEM-API v1.1:: Combined and Processed Data for Run {self.run_id} saved to {combined_csv_path}")
         return all_data
     # Function to plot processed data
     def plot_processed_data(self, all_data):
         plot_path = os.path.join(self.run_output_dir, "Plots")
         os.makedirs(plot_path, exist_ok=True)
-        print(f"### AEM-API v1.0:: Plotting Combined and Processed Data for Run {self.run_id}...")
+        print(f"### AEM-API v1.1:: Plotting Combined and Processed Data for Run {self.run_id}...")
         # Density vs m,c
         fig, axs = plt.subplots(2, 1, figsize=(10, 12))
         # Plot Density vs. m
@@ -603,5 +604,5 @@ class AEM_API:
         ctn_plot_path = os.path.join(plot_path, "CationTransferenceNumber.png")
         plt.savefig(ctn_plot_path)
         plt.close()
-        print(f"### AEM-API v1.0:: Combined and Processed Data Plots for Run {self.run_id} saved to '{plot_path}'")
-    print(f"### AEM-API v1.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
+        print(f"### AEM-API v1.1:: Combined and Processed Data Plots for Run {self.run_id} saved to '{plot_path}'")
+    print(f"### AEM-API v1.1:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")

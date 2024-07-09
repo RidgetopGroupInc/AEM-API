@@ -14,7 +14,7 @@ import json
 
 ## AEM Directories
 AEM_HOME_PATH = r'C:\\Users\\anadkarni\\Documents\\AEM\\CLI'
-AEM_PROGRAM_NAME = "aem-2241ml.exe"
+AEM_PROGRAM_NAME = "aem-2242m-d-accc-dlm.exe"
 
 ## Define Electrolyte Composition - Solvents and Salts
 solvents = {'EMC': 0.7, 'EC': 0.3}
