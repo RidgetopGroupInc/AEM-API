@@ -468,6 +468,8 @@ class AEM_API:
         return all_data
     # Function to plot processed data
     def plot_processed_data(self, all_data):
+        plot_path = os.path.join(self.run_output_dir, "Plots")
+        os.makedirs(plot_path, exist_ok=True)
         print(f"### AEM-API v1.0:: Plotting Combined and Processed Data for Run {self.run_id}...")
         # Density vs m,c
         fig, axs = plt.subplots(2, 1, figsize=(10, 12))
@@ -498,7 +500,7 @@ class AEM_API:
         axs[1].legend(title='Temperature')
         axs[1].grid(True)
         # Save the combined plot
-        density_plot_path = os.path.join(self.run_output_dir, "Density.png")
+        density_plot_path = os.path.join(plot_path, "Density.png")
         plt.savefig(density_plot_path)
         plt.close()
         # Combined Conductivity vs. m, c
@@ -530,7 +532,7 @@ class AEM_API:
         axs[1].legend(title='Temperature')
         axs[1].grid(True)
         # Save the combined plot
-        cc_plot_path = os.path.join(self.run_output_dir, "CombinedConductivity.png")
+        cc_plot_path = os.path.join(plot_path, "CombinedConductivity.png")
         plt.savefig(cc_plot_path)
         plt.close()
         # Mean Viscosity vs. m, c
@@ -562,7 +564,7 @@ class AEM_API:
         axs[1].legend(title='Temperature')
         axs[1].grid(True)
         # Save the combined plot
-        mv_plot_path = os.path.join(self.run_output_dir, "MeanViscosity.png")
+        mv_plot_path = os.path.join(plot_path, "MeanViscosity.png")
         plt.savefig(mv_plot_path)
         plt.close()
         # Cation Transference Number vs. m, c
@@ -598,8 +600,8 @@ class AEM_API:
         axs[1].legend(title='Legend')
         axs[1].grid(True)
         # Save the plot
-        ctn_plot_path = os.path.join(self.run_output_dir, "cation_transference_plot.png")
+        ctn_plot_path = os.path.join(plot_path, "CationTransferenceNumber.png")
         plt.savefig(ctn_plot_path)
         plt.close()
-        print(f"### AEM-API v1.0:: Combined and Processed Data Plots for Run {self.run_id} saved to '{self.run_output_dir}'")
+        print(f"### AEM-API v1.0:: Combined and Processed Data Plots for Run {self.run_id} saved to '{plot_path}'")
     print(f"### AEM-API v1.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
