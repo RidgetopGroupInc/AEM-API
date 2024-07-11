@@ -1,0 +1,60 @@
+cue,name,string
+1, water,water
+2, propylene carbonate (PC),PC
+3, ethylene carbonate (EC),EC
+4, gamma-butyrolactone (GBL),GBL
+5," 1,2 dimethoxyethane (DME)",DME
+6, ethylmethyl carbonate (EMC),EMC
+7, diethyl carbonate (DEC),DEC
+8, dimethyl carbonate (DMC),DMC
+9, ethyl acetate (EA),EA
+10," 1,3 dioxolane",DIOXOLANE
+11, methyl butyrate (MB),MB
+12, ethyl propionate (EP),EP
+13, n-propyl acetate (nPA),nPA
+14, ethylene glycol (EG),EG
+15, fluoroethylene carbonate (FEC),FEC
+16, ethylmethoxyethyl sulfone (EMES),EMES
+17, Dowanol-PMA (DOW-PMA),DOW-PMA
+18, 2-methoxyethyl acetate (MEA),MEA
+19, 1NM2-siloxane (1NM2),1NM2
+20, DEGDME (diglyme),DEGDME
+21, 3-TEGDME (triglyme),3-TEGDME
+22, 4-TEGDME (tetraglyme),4-TEGDME
+23, INL Additive FM2,FM2
+24, INL Additive SM4,SM4
+25, INL Additive PA5,PA5
+26, glutaronitrile (GLN),GLN
+27, adiponitrile (ADN),AND
+28, ethylmethyl sulfone (EMS),EMS
+29, methyl acetate (MA),MA
+30, methyl propionate (MP),MP
+31, methyl formate (MF),MF
+32, ethyl formate (EF),EF
+33, propionitrile (PrN),PrN
+34, sulfolane (TMS),TMS
+35, trimethyl phosphate (TMP),TMP
+36,acetonitrile (ACN),ACN
+37,methyl monofluoroacetate,M1FA
+38,methyl difluoroacetate,M2FA
+39,vinylene carbonate,VC
+40,n-propyl proprionate,nPP
+41,butyronitrile (BN),BN
+42,n-butyl acetate (nBA), nBA
+43, n-butyl propionate (nBP), nBP
+44, n-butyl butyrate (nBB), nBB
+45, vinyl ethylene carbonate (VEC), VEC
+47," Tris(2,2,2-trifluoroethyl)-orthoformate (TFEO)",TFEO
+48, succinonitrile (SN), SN
+49," Dimethyl 2,5, Dioxahexanedioate (DMOHC)", DMOHC
+50," Diethyl 2,5, Dioxahexanedioate (DEOHC)", DEOHC
+51, 7-oxabicyclo[2.2.1]heptane-2-carbonitrile (OCN), OCN
+52, tetrahydrofuran (THF), THF
+55, triethyl phosphate (TEP), TEP
+56," Bis(2,2,2-trifluoroethyl) ether (BTFE)", BTFE
+57," 1,1,2,2-tetrafluoroethyl-2,2,3,3-tetrafluoropropyl ether (TTE)", TTE
+58, ethyl difluoroacetate (E2FA), E2FA
+59," 1,2-dimethoxypropane (DMP)", DMP
+60, dimethyl sulfite (DMS), DMS
+61, isovaleronitrile (IVN), IVN
+62, isobutyronitrile (IBN), IBN
