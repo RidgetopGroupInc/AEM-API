@@ -145,7 +145,7 @@ Distributed under the GNU GPL-3.0 License. See `LICENSE` for more information.
 - **Arsh Nadkarni** (Applications Engineer, Ridgetop) - [anadkarni@ridgetopgroup.com](mailto:ccurti@ridgetopgroup.com)
 
 ### For Business & Licensing Enquiries
-- **Wyatt Pena** (VP of Operations, INL) - [wpena@ridgetopgroup.com](wpena@ridgetopgroup.com)
+- **Wyatt Pena** (VP of Operations, Ridgetop) - [wpena@ridgetopgroup.com](wpena@ridgetopgroup.com)
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
