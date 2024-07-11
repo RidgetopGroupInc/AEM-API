@@ -3,12 +3,14 @@
 """ © 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved """
 # ============================================================================
 
-## Import AEM API Classes
+## Import Libraries and AEM API Classes
+import os
 from AEM_API import ElectrolyteComposition, AEM_API
 
 ## AEM Directories
-AEM_HOME_PATH = r'C:\\Users\\anadkarni\\Documents\\AEM\\CLI'
-AEM_PROGRAM_NAME = "aem-2242m-d-accc-dlm.exe"
+homedir = os.path.expanduser("~")
+AEM_HOME_PATH = rf'{homedir}\Documents\AEM\CLI'   # Path to AEM/CLI/ (Update path if different!)
+AEM_PROGRAM_NAME = "aem-2242m-d-accc-dlm.exe"     # aem-2242m-d-accc-dlm.exe or aem-2241ml.exe
 
 ## Define Electrolyte Composition - Solvents and Salts
 solvents = {'EMC': 0.7, 'EC': 0.3}
