@@ -21,20 +21,22 @@ electrolyte_comp = ElectrolyteComposition.by_mass_fraction_and_molality(solvents
 output_dir = 'AEM-API-Output'  # Output Directory for AEM API Runs
 solventcomp = 1                # Solvent Composition: 1 (Single Fixed Composition) or 2 (Larger Matrix)
 solventcomppropbasis = 2       # Solvent Composition Proportionality Basis: 1 (Volume) or 2 (Mass)
-tmin = 20                      # Minimum Temperature: -30deg to 60 deg (Do not exceed 100deg)
+saltcomp = 1                   # Salt Composition [Salts > 1]: 1 (Single Fixed Composition) or 2 (Several Proportions)
+tmin = 10                      # Minimum Temperature: -30deg to 60 deg (Do not exceed 100deg)
 tmax = 60                      # Maximum Temperature: -30deg to 60 deg (Do not exceed 100deg)
 stepsize = 10                  # Temperature Stepsize: 5deg or 10deg
 tis = 1                        # Triple-Ion Stability Method: 1 (default) or 2 (inequalities are automatically determined)
 contactangle = 90              # Contact Angle: 0deg to 90deg
 porelength = 50                # Pore Length: 0.1um to 50um
-saltconc = 0.1                 # Input Salt Concentration of Interest: 0.1 to 4
+saltconc = 0.1                 # Input Salt Concentration of Interest: 0.1 to Max. Salt Conc.
 scaep = 0                      # Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations: 0 (No) or 1 (Yes)
 dl = 0                         # Double Layer (DL) Calculations: 0 (No) or 1 (Yes)
 
 ## Initialize the AEM-API Object
 aem = AEM_API(electrolyte=electrolyte_comp,
               solventcomp=solventcomp,
-              solventcomppropbasis=solventcomppropbasis, 
+              solventcomppropbasis=solventcomppropbasis,
+              saltcomp=saltcomp, 
               tmin=tmin, 
               tmax=tmax, 
               stepsize=stepsize,
