@@ -1,11 +1,12 @@
 # ============================================================================
-"""                 Advanced Electrolyte Model (AEM) API                   """
+"""         Advanced Electrolyte Model (AEM) v2.1.0 API (NON-ACCC)         """
 """ © 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved """
 # ============================================================================
 
 ## IMPORT LIBRARIES AND DEPENDENCIES
 import subprocess as sp
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import re
 from collections import OrderedDict
@@ -243,7 +244,8 @@ class AEM_API:
                  salt_csv=AEM_SALTS, 
                  solvent_csv=AEM_SOLVENTS,
                  solventcomp=None,
-                 solventcomppropbasis=None, 
+                 solventcomppropbasis=None,
+                 saltcomp=None, 
                  tmin=None, 
                  tmax=None, 
                  stepsize=None,
@@ -272,6 +274,7 @@ class AEM_API:
         self.report_string = os.path.join(AEMHomePath,"Report1 -- Summary of Key Properties")
         self.solventcomp = solventcomp
         self.solventcomppropbasis = solventcomppropbasis
+        self.saltcomp = saltcomp
         self.tmin = tmin
         self.tmax = tmax
         self.salt_offset = 0.1  # for ensuring equality in salt molality comparison
@@ -290,6 +293,9 @@ class AEM_API:
         self.run_output_dir = os.path.join(self.output_dir, f"AEMAPIRun_{self.run_id}_{self.run_date}_{self.run_time}")
         os.makedirs(self.run_output_dir, exist_ok=True)
         self.AEMHomePath = AEMHomePath
+        
+    print(f"### AEM-API v1.0:: Starting Program!")
+    
     # Method to read AEM data from CSV files
     def read_AEM_data(self, salt_csv, solvent_csv):
         saltDF = pd.read_csv(salt_csv)
@@ -305,7 +311,7 @@ class AEM_API:
         self.cues = []
         self.params = {}  # Dictionary to store parameter names and their corresponding values
         if self.aem_exe_filename == "aem-2242m-d-accc-dlm.exe":
-            self.cues.append(1) # To allow ACCC access until CC fix
+            self.cues.append(0) # To allow non-ACCC access
         self.cues.append(self.solventcomp)
         self.params["Solvent Composition"] = self.solventcomp
         self.cues.append(self.solventcomppropbasis)
@@ -325,8 +331,8 @@ class AEM_API:
         for salt in self.electrolyte.salts.keys():
             self.cues.append(self.AEM_salts[salt][0])  # append self.cues
         if number_of_salts > 1: 
-            self.cues.append(1)  # specify single fixed salt prop
-            self.params["Salt Composition Proportion Mode"] = 1
+            self.cues.append(self.saltcomp)  # specify single fixed salt prop
+            self.params["Salt Composition Proportion Mode"] = self.saltcomp
         for salt in self.electrolyte.salts:
             self.cues.append(self.electrolyte.salts[salt] + self.salt_offset)  # append molalities
         self.cues.append(self.tmin)
@@ -349,6 +355,7 @@ class AEM_API:
         self.params["Double Layer (DL) Calculations"] = self.dl
         self.cues.append(0)
         print(f"### AEM-API v1.0:: Input Parameters: {self.params}")
+    
     # Method to run the AEM model
     def runAEM(self, quiet=True):
         print(f"### AEM-API v1.0:: Starting Run {self.run_id}...")
@@ -369,6 +376,7 @@ class AEM_API:
         self.save_run_log()
         self.copy_report_files()
         self.run_yet = True
+    
     # Function to log run summary
     def save_run_log(self):
         log_data = {
@@ -383,6 +391,7 @@ class AEM_API:
             json.dump(log_data, f, indent=4)
         print(f"### AEM-API v1.0:: Run {self.run_id}: Log saved to {log_file}")
         return None
+    
     # Function to copy report files to run_output_dir
     def copy_report_files(self):
         for report_file in self.report_files:
@@ -394,6 +403,7 @@ class AEM_API:
                 shutil.copy(src, dst)
             else:
                 print(f"Report file {report_file} not found.")
+    
     # Method to process the output from the AEM model
     def process(self):
         if not self.run_yet:
@@ -441,7 +451,7 @@ class AEM_API:
         # process values to pandas dataframe
         def data_lines_to_dataframe(list_of_lines, columns):
             return pd.DataFrame(list_of_lines, columns=columns)
-        columns = ["m", "c", "wt fr salt", "mole fr salt", "density (g/mL)", "cP_mean", "sig1 (eff)", "sig2 (eff)", "S(+)",
+        columns = ["m", "c", "c_eff_trans", "wt fr salt", "mole fr salt", "density (g/mL)", "cP_mean", "sig1 (eff)", "sig2 (eff)", "S(+)",
                    "Rational Act.Coef. y+-", "Diff. Coeff. cm^2/s", "Cond (mS) 2", "t+(a)", "t+(b)",
                    "dissoc (SI)", "dissoc (TI)"]
         if len(self.electrolyte.salts) == 1:
@@ -449,6 +459,7 @@ class AEM_API:
         elif len(self.electrolyte.salts) == 2:
             self.data = {get_key_binary(k): data_lines_to_dataframe(find_data_in_txt(v), columns) for k, v in d.items()}
         self.data_processed = True
+    
     # Function to save processed data  
     def save_processed_data(self):
         print(f"### AEM-API v1.0:: Saving Combined and Processed Data for Run {self.run_id}...")
@@ -456,9 +467,9 @@ class AEM_API:
         all_data = pd.DataFrame()
         # Access, display, and save the processed data
         for key, df in self.data.items():
-            print(f"Key: {key}")
-            print(df)
-            print("DataFrame Columns:", df.columns)  # Print the DataFrame columns for debugging
+            #print(f"Key: {key}")
+            #print(df)
+            #print("DataFrame Columns:", df.columns)  # Print the DataFrame columns for debugging
             # Add a new column to indicate the temperature (previously 'Key')
             df['Temperature'] = key
             # Append the DataFrame to the combined DataFrame
@@ -468,6 +479,7 @@ class AEM_API:
         all_data.to_csv(combined_csv_path, index=False)
         print(f"### AEM-API v1.0:: Combined and Processed Data for Run {self.run_id} saved to {combined_csv_path}")
         return all_data
+    
     # Function to plot processed data
     def plot_processed_data(self, all_data):
         plot_path = os.path.join(self.run_output_dir, "Plots")
@@ -478,132 +490,114 @@ class AEM_API:
         # Plot Density vs. m
         if 'Temperature' in all_data.columns:
             for temp in all_data['Temperature'].unique():
-                subset = all_data[all_data['Temperature'] == temp]
-                axs[0].plot(subset['m'], subset['density (g/mL)'], label=f'{temp}°C', marker='o')
-            axs[0].set_xlabel('Molal Salt Concentration (m)')
-        else:
-            axs[0].plot(all_data['m'], all_data['density (g/mL)'], marker='o')
-            axs[0].set_xlabel('Molal Salt Concentration (m)')
-        axs[0].set_ylabel('Density (g/mL)')
+                if self.tmin <= temp <= self.tmax:
+                    subset = all_data[all_data['Temperature'] == temp]
+                    axs[0].plot(subset['m'], subset['density (g/mL)'], label=f'{temp}°C', marker='o')
+            axs[0].set_xlabel('m (mol/kg)', fontweight="bold")
+        axs[0].set_ylabel('Density (g/mL)', fontweight='bold')
         axs[0].set_title('Density vs. Molal Salt Concentration (m)')
-        axs[0].legend(title='Temperature')
+        axs[0].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
         axs[0].grid(True)
         # Plot Density vs. c
         if 'Temperature' in all_data.columns:
             for temp in all_data['Temperature'].unique():
-                subset = all_data[all_data['Temperature'] == temp]
-                axs[1].plot(subset['c'], subset['density (g/mL)'], label=f'{temp}°C', marker='o')
-            axs[1].set_xlabel('Molar Salt Concentration (c)')
-        else:
-            axs[1].plot(all_data['c'], all_data['density (g/mL)'], marker='o')
-            axs[1].set_xlabel('Molar Salt Concentration (c)')
-        axs[1].set_ylabel('Density (g/mL)')
+                if self.tmin <= temp <= self.tmax:
+                    subset = all_data[all_data['Temperature'] == temp]
+                    axs[1].plot(subset['c'], subset['density (g/mL)'], label=f'{temp}°C', marker='o')
+            axs[1].set_xlabel('c (mol/L)', fontweight="bold")
+        axs[1].set_ylabel('Density (g/mL)', fontweight='bold')
         axs[1].set_title('Density vs. Molar Salt Concentration (c)')
-        axs[1].legend(title='Temperature')
+        axs[1].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
         axs[1].grid(True)
         # Save the combined plot
         density_plot_path = os.path.join(plot_path, "Density.png")
-        plt.savefig(density_plot_path)
+        plt.savefig(density_plot_path, bbox_inches='tight')
         plt.close()
         # Combined Conductivity vs. m, c
         fig, axs = plt.subplots(2, 1, figsize=(10, 12))
         # Plot CC vs. m
         if 'Temperature' in all_data.columns:
             for temp in all_data['Temperature'].unique():
-                subset = all_data[all_data['Temperature'] == temp]
-                axs[0].plot(subset['m'], subset['Cond (mS) 2'], label=f'{temp}°C', marker='o')
-            axs[0].set_xlabel('Molal Salt Concentration (m)')
-        else:
-            axs[0].plot(all_data['m'], all_data['Cond (mS) 2'], marker='o')
-            axs[0].set_xlabel('Molal Salt Concentration (m)')
-        axs[0].set_ylabel('Combined Conductivity (mS)')
+                if self.tmin <= temp <= self.tmax:
+                    subset = all_data[all_data['Temperature'] == temp]
+                    axs[0].plot(subset['m'], subset['Cond (mS) 2'], label=f'{temp}°C', marker='o')
+            axs[0].set_xlabel('m (mol/kg)', fontweight="bold")
+        axs[0].set_ylabel('Combined Conductivity (mS)', fontweight="bold")
         axs[0].set_title('Combined Conductivity vs. Molal Salt Concentration (m)')
-        axs[0].legend(title='Temperature')
+        axs[0].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
         axs[0].grid(True)
         # Plot CC vs. c
         if 'Temperature' in all_data.columns:
             for temp in all_data['Temperature'].unique():
-                subset = all_data[all_data['Temperature'] == temp]
-                axs[1].plot(subset['c'], subset['Cond (mS) 2'], label=f'{temp}°C', marker='o')
-            axs[1].set_xlabel('Molar Salt Concentration (c)')
-        else:
-            axs[1].plot(all_data['c'], all_data['Cond (mS) 2'], marker='o')
-            axs[1].set_xlabel('Molar Salt Concentration (c)')
-        axs[1].set_ylabel('Combined Conductivity (mS)')
+                if self.tmin <= temp <= self.tmax:
+                    subset = all_data[all_data['Temperature'] == temp]
+                    axs[1].plot(subset['c'], subset['Cond (mS) 2'], label=f'{temp}°C', marker='o')
+            axs[1].set_xlabel('c (mol/L)', fontweight="bold")
+        axs[1].set_ylabel('Combined Conductivity (mS)', fontweight='bold')
         axs[1].set_title('Combined Conductivity vs. Molar Salt Concentration (c)')
-        axs[1].legend(title='Temperature')
+        axs[1].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
         axs[1].grid(True)
         # Save the combined plot
         cc_plot_path = os.path.join(plot_path, "CombinedConductivity.png")
-        plt.savefig(cc_plot_path)
+        plt.savefig(cc_plot_path, bbox_inches='tight')
         plt.close()
         # Mean Viscosity vs. m, c
         fig, axs = plt.subplots(2, 1, figsize=(10, 12))
         # Plot MV vs. m
         if 'Temperature' in all_data.columns:
             for temp in all_data['Temperature'].unique():
-                subset = all_data[all_data['Temperature'] == temp]
-                axs[0].plot(subset['m'], subset['cP_mean'], label=f'{temp}°C', marker='o')
-            axs[0].set_xlabel('Molal Salt Concentration (m)')
-        else:
-            axs[0].plot(all_data['m'], all_data['cP_mean'], marker='o')
-            axs[0].set_xlabel('Molal Salt Concentration (m)')
-        axs[0].set_ylabel('Mean Viscosity (cP)')
+                if self.tmin <= temp <= self.tmax:
+                    subset = all_data[all_data['Temperature'] == temp]
+                    axs[0].plot(subset['m'], subset['cP_mean'], label=f'{temp}°C', marker='o')
+            axs[0].set_xlabel('m (mol/kg)', fontweight="bold")
+        axs[0].set_ylabel('Mean Viscosity (cP)', fontweight='bold')
         axs[0].set_title('Mean Viscosity vs. Molal Salt Concentration (m)')
-        axs[0].legend(title='Temperature')
+        axs[0].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
         axs[0].grid(True)
         # Plot MV vs. c
         if 'Temperature' in all_data.columns:
             for temp in all_data['Temperature'].unique():
-                subset = all_data[all_data['Temperature'] == temp]
-                axs[1].plot(subset['c'], subset['cP_mean'], label=f'{temp}°C', marker='o')
-            axs[1].set_xlabel('Molar Salt Concentration (c)')
-        else:
-            axs[1].plot(all_data['c'], all_data['cP_mean'], marker='o')
-            axs[1].set_xlabel('Molar Salt Concentration (c)')
-        axs[1].set_ylabel('Mean Viscosity (cP)')
+                if self.tmin <= temp <= self.tmax:
+                    subset = all_data[all_data['Temperature'] == temp]
+                    axs[1].plot(subset['c'], subset['cP_mean'], label=f'{temp}°C', marker='o')
+            axs[1].set_xlabel('c (mol/L)', fontweight="bold")
+        axs[1].set_ylabel('Mean Viscosity (cP)', fontweight='bold')
         axs[1].set_title('Mean Viscosity vs. Molar Salt Concentration (c)')
-        axs[1].legend(title='Temperature')
+        axs[1].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
         axs[1].grid(True)
         # Save the combined plot
         mv_plot_path = os.path.join(plot_path, "MeanViscosity.png")
-        plt.savefig(mv_plot_path)
+        plt.savefig(mv_plot_path, bbox_inches='tight')
         plt.close()
         # Cation Transference Number vs. m, c
         fig, axs = plt.subplots(2, 1, figsize=(10, 12))
         # Plot Cation Transference Number vs. m
         if 'Temperature' in all_data.columns:
             for temp in all_data['Temperature'].unique():
-                subset = all_data[all_data['Temperature'] == temp]
-                axs[0].plot(subset['m'], subset['t+(a)'], label=f't+(a) {temp}°C', marker='.')
-                axs[0].plot(subset['m'], subset['t+(b)'], label=f't+(b) {temp}°C', marker='o')
-            axs[0].set_xlabel('Molal Salt Concentration (m)')
-        else:
-            axs[0].plot(all_data['m'], all_data['t+(a)'], marker='.', label='t+(a)')
-            axs[0].plot(all_data['m'], all_data['t+(b)'], marker='o', label='t+(b)')
-            axs[0].set_xlabel('Molal Salt Concentration (m)')
-        axs[0].set_ylabel('Cation Transference Number')
+                if self.tmin <= temp <= self.tmax:
+                    subset = all_data[all_data['Temperature'] == temp]
+                    axs[0].plot(subset['m'], subset['t+(a)'], label=f't+(a) {temp}°C', marker='.')
+                    axs[0].plot(subset['m'], subset['t+(b)'], label=f't+(b) {temp}°C', marker='o')
+            axs[0].set_xlabel('m (mol/kg)', fontweight="bold")
+        axs[0].set_ylabel('Cation Transference Number', fontweight='bold')
         axs[0].set_title('Cation Transference Number vs. Molal Salt Concentration (m)')
-        axs[0].legend(title='Legend')
+        axs[0].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
         axs[0].grid(True)
         # Plot Cation Transference Number vs. c
         if 'Temperature' in all_data.columns:
             for temp in all_data['Temperature'].unique():
-                subset = all_data[all_data['Temperature'] == temp]
-                axs[1].plot(subset['c'], subset['t+(a)'], label=f't+(a) {temp}°C', marker='.')
-                axs[1].plot(subset['c'], subset['t+(b)'], label=f't+(b) {temp}°C', marker='o')
-            axs[1].set_xlabel('Molar Salt Concentration (c)')
-        else:
-            axs[1].plot(all_data['c'], all_data['t+(a)'], marker='.', label='t+(a)')
-            axs[1].plot(all_data['c'], all_data['t+(b)'], marker='o', label='t+(b)')
-            axs[1].set_xlabel('Molar Salt Concentration (c)')
-        axs[1].set_ylabel('Cation Transference Number')
+                if self.tmin <= temp <= self.tmax:
+                    subset = all_data[all_data['Temperature'] == temp]
+                    axs[1].plot(subset['c'], subset['t+(a)'], label=f't+(a) {temp}°C', marker='.')
+                    axs[1].plot(subset['c'], subset['t+(b)'], label=f't+(b) {temp}°C', marker='o')
+            axs[1].set_xlabel('c (mol/L)', fontweight="bold")
+        axs[1].set_ylabel('Cation Transference Number', fontweight="bold")
         axs[1].set_title('Cation Transference Number vs. Molar Salt Concentration (c)')
-        axs[1].legend(title='Legend')
+        axs[1].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
         axs[1].grid(True)
         # Save the plot
         ctn_plot_path = os.path.join(plot_path, "CationTransferenceNumber.png")
-        plt.savefig(ctn_plot_path)
+        plt.savefig(ctn_plot_path, bbox_inches='tight')
         plt.close()
         print(f"### AEM-API v1.0:: Combined and Processed Data Plots for Run {self.run_id} saved to '{plot_path}'")
-    print(f"### AEM-API v1.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
+        print(f"### AEM-API v1.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
