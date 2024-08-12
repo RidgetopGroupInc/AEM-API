@@ -141,15 +141,19 @@ Distributed under the GNU GPL-3.0 License. See `LICENSE` for more information.
 - **Dr. Kevin Gering** (Distinguished Scientist, Idaho National Laboratory) - [kevin.gering@inl.gov](mailto:kevin.gering@inl.gov)
   
 ### For Technical Enquiries & Assistance
+**_AEM API_**
+- **Arsh Nadkarni** (Applications Engineer, Ridgetop) - [anadkarni@ridgetopgroup.com](mailto:anadkarni@ridgetopgroup.com)
+- **Dr. Basab Goswami** (Battery Simulations Engineer, Ridgetop) - [brdgoswami@ridgetopgroup.com](mailto:brdgoswami@ridgetopgroup.com)
+
+**_AEM GUI/CLI_**
 - **Christopher Curti** (Senior Software Engineer, Ridgetop) - [ccurti@ridgetopgroup.com](mailto:ccurti@ridgetopgroup.com)
-- **Arsh Nadkarni** (Applications Engineer, Ridgetop) - [anadkarni@ridgetopgroup.com](mailto:ccurti@ridgetopgroup.com)
 
 ### For Business & Licensing Enquiries
-- **Wyatt Pena** (VP of Operations, Ridgetop) - [wpena@ridgetopgroup.com](wpena@ridgetopgroup.com)
+- **Wyatt Pena** (VP of Operations, Ridgetop) - [wpena@ridgetopgroup.com](mailto:wpena@ridgetopgroup.com)
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
-- **Adarsh Dave** (Research Staff, Carnegie Mellon University)
+- **Dr. Adarsh Dave** (Research Staff, Carnegie Mellon University) - [ardave@andrew.cmu.edu](mailto:ardave@andrew.cmu.edu)
 - **[othneildrew's Best-README-Template](https://github.com/othneildrew/Best-README-Template)**
 
 <!-- MARKDOWN LINKS & IMAGES -->
