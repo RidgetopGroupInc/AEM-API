@@ -5,23 +5,34 @@
 
 ## Import Libraries and AEM API Classes
 import os
-from AEM_API import ElectrolyteComposition, AEM_API
+import sys
+from AEM_API import ElectrolyteComposition, ACCCElectrolyteComposition, AEM_API
 
 ## AEM Directories
 homedir = os.path.expanduser("~")
 AEM_HOME_PATH = rf'{homedir}\Documents\AEM\CLI'   # Path to AEM/CLI/ (Update path if different!)
 AEM_PROGRAM_NAME = "aem-2242m-d-accc-dlm.exe"     # aem-2242m-d-accc-dlm.exe or aem-2241ml.exe
 
-## Define Electrolyte Composition - Solvents and Salts
-solvents = {'EMC': 0.7, 'EC': 0.3}
+## Define Non-ACCC Electrolyte Composition - Solvents and Salts
+solvents = {}
 salts = {'LiPF6': 1}
-electrolyte_comp = ElectrolyteComposition.by_mass_fraction_and_molality(solvents=solvents, salts=salts)
+electrolyte = ElectrolyteComposition.by_mass_fraction_and_molality(solvents=solvents, salts=salts)
+
+## Define ACCC Electrolyte Composition - Solvents and Salts
+accc_solvents = {'EC_EMC': (70, 30)}
+accc_salts = {}
+accc_electrolyte = ACCCElectrolyteComposition(solvents=accc_solvents, salts=accc_salts)
 
 ## Define Input Parameters
-output_dir = 'AEM-API-Output'  # Output Directory for AEM API Runs
+output_dir = 'AEM-API-Output\\Demos'             # Output Directory for AEM API Runs
+run_name = 'w_ACCC_ACCCSolvents+NonACCCSalt'     # Run Name
+
+useACCC = True                 # Input to use ACCC: Yes = True or No = False
+
 solventcomp = 1                # Solvent Composition: 1 (Single Fixed Composition) or 2 (Larger Matrix)
 solventcomppropbasis = 2       # Solvent Composition Proportionality Basis: 1 (Volume) or 2 (Mass)
 saltcomp = 1                   # Salt Composition [Salts > 1]: 1 (Single Fixed Composition) or 2 (Several Proportions)
+totalsaltconc = 1              # Max. Total Salt Concentration of Interest
 tmin = 10                      # Minimum Temperature: -30deg to 60 deg (Do not exceed 100deg)
 tmax = 60                      # Maximum Temperature: -30deg to 60 deg (Do not exceed 100deg)
 stepsize = 10                  # Temperature Stepsize: 5deg or 10deg
@@ -33,10 +44,13 @@ scaep = 0                      # Surface-Charge Attenuated Electrolyte Permittiv
 dl = 0                         # Double Layer (DL) Calculations: 0 (No) or 1 (Yes)
 
 ## Initialize the AEM-API Object
-aem = AEM_API(electrolyte=electrolyte_comp,
+aem = AEM_API(electrolyte=electrolyte,
+              accc_electrolyte=accc_electrolyte,
+              useACCC=useACCC,
               solventcomp=solventcomp,
               solventcomppropbasis=solventcomppropbasis,
-              saltcomp=saltcomp, 
+              saltcomp=saltcomp,
+              totalsaltconc=totalsaltconc, 
               tmin=tmin, 
               tmax=tmax, 
               stepsize=stepsize,
@@ -47,6 +61,7 @@ aem = AEM_API(electrolyte=electrolyte_comp,
               scaep=scaep,
               dl=dl, 
               output_dir=output_dir,
+              run_name=run_name,
               AEMHomePath=AEM_HOME_PATH,
               AEMProgramName=AEM_PROGRAM_NAME) 
 
