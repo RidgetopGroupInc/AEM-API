@@ -26,6 +26,7 @@ vals2str = lambda ls: [str(x) for x in ls]
 
 ## API, AEM, & OUTPUT DIRECTORY PATHS
 API_HOME_PATH = os.path.dirname(os.path.realpath(__file__))
+DLM_EXECUTABLE = "DLM_Executable.exe"
 
 ## SOLVENT AND SALT DIRECTORY PATHS
 SOLVENT_DB = "data\\solventDB.csv"
@@ -315,7 +316,6 @@ class AEM_API:
                  accc_electrolyte=None, 
                  salt_csv=AEM_SALTS, 
                  solvent_csv=AEM_SOLVENTS,
-                 useACCC=None,
                  solventcomp=None,
                  solventcomppropbasis=None,
                  saltcomp=None,
@@ -333,9 +333,10 @@ class AEM_API:
                  run_name=None,
                  AEMHomePath=None,
                  AEMProgramName=None):
-        if useACCC == False:
+        DLMout = self.runDLMExecutable()
+        if DLMout == '1':
             self.read_AEM_data(salt_csv, solvent_csv)
-        if useACCC == True:
+        if DLMout == '6':
             if accc_electrolyte is None and electrolyte is not None:
                 self.read_AEM_data(salt_csv, solvent_csv)
             if accc_electrolyte is not None and electrolyte is None:
@@ -345,12 +346,14 @@ class AEM_API:
                 self.read_AEM_ACCC_data(accc_electrolyte)
         self.electrolyte = electrolyte
         self.accc_electrolyte = accc_electrolyte
+        self.AEM_ACCC_solvents = accc_electrolyte.solvents if accc_electrolyte else None
+        self.AEM_ACCC_salts = accc_electrolyte.salts if accc_electrolyte else None
         self.cues = False
         self.run_yet = False
         self.data_processed = False
         self.aem_exe_filename = AEMProgramName  
         self.report_string = os.path.join(AEMHomePath,"Report1 -- Summary of Key Properties")
-        self.useACCC = useACCC
+        self.dlmout = DLMout
         self.solventcomp = solventcomp
         self.solventcomppropbasis = solventcomppropbasis
         self.saltcomp = saltcomp
@@ -377,7 +380,6 @@ class AEM_API:
             self.run_output_dir = os.path.join(self.output_dir, f"AEMAPIRun_{self.run_name}_{self.run_date}_{self.run_time}")
         os.makedirs(self.run_output_dir, exist_ok=True)
         self.AEMHomePath = AEMHomePath
-        
     print(f"### AEM-API v1.0:: Starting Program!")
     
     # Method to read AEM data from CSV files
@@ -412,13 +414,34 @@ class AEM_API:
                 raise ValueError(f"Salt {salt} does not match any solvent in {list(self.AEM_ACCC_solvents.keys())}.")
         return None
 
+    # Method to run the AEM model
+    def runDLMExecutable(self):
+        print(f"### AEM-API v1.0:: Checking ACCC Access from DLM ...")
+        # Path to the executable
+        homedir = os.path.expanduser("~")
+        AEM_HOME = rf'{homedir}\Documents\AEM\CLI'   # Path to AEM/CLI/ (Update path if different!)
+        fp = os.path.join(AEM_HOME, DLM_EXECUTABLE)
+        # Run the executable with the 'check' argument
+        p = sp.Popen([fp, 'check'], shell=True, stdout=sp.PIPE, stderr=sp.STDOUT, cwd=AEM_HOME)
+        # Capture the output
+        stdout, _ = p.communicate()  # Capture output
+        stdout = stdout.decode('utf-8').strip()  # Decode and strip any extra whitespace/newlines
+        # Log the output and return it
+        if stdout == '1':
+            print(f"### AEM-API v1.0:: ACCC Access Invalid!")
+        elif stdout == '6':
+            print(f"### AEM-API v1.0:: ACCC Access Valid")
+        else:
+            print(f"### AEM-API v1.0:: Unknown output: {stdout}")
+        print(f"### AEM-API v1.0:: ACCC Access Check Complete!")
+        return stdout
+
     # Method to generate input cues for the AEM model
     def generate_cues(self):
         self.cues = []
         self.params = {}  # Dictionary to store parameter names and their corresponding values
         # w/o ACCC Case
-        if self.useACCC == False:
-            self.cues.append(0)  # Non-ACCC
+        if self.dlmout == '1':
             self.cues.append(self.solventcomp)
             self.params["Solvent Composition"] = self.solventcomp
             self.cues.append(self.solventcomppropbasis)
@@ -468,8 +491,7 @@ class AEM_API:
             self.cues.append(0)
             print(f"### AEM-API v1.0:: Input Parameters: {self.params}")
         # w/ ACCC case
-        elif self.useACCC == True:
-            self.cues.append(1) # ACCC
+        elif self.dlmout == '6':
             # Non-ACCC Composition Case
             if self.accc_electrolyte is None:
                 self.cues.append(self.solventcomp)
