@@ -11,7 +11,7 @@ from AEM_API import ElectrolyteComposition, ACCCElectrolyteComposition, AEM_API
 ## AEM Directories
 homedir = os.path.expanduser("~")
 AEM_HOME_PATH = rf'{homedir}\Documents\AEM\CLI'   # Path to AEM/CLI/ (Update path if different!)
-AEM_PROGRAM_NAME = "aem-2242m-d-accc-dlm.exe"     # aem-2242m-d-accc-dlm.exe or aem-2241ml.exe
+AEM_PROGRAM_NAME = "aem-2242m-d-accc.exe"
 
 ## Define Non-ACCC Electrolyte Composition - Solvents and Salts
 solvents = {}
@@ -26,8 +26,6 @@ accc_electrolyte = ACCCElectrolyteComposition(solvents=accc_solvents, salts=accc
 ## Define Input Parameters
 output_dir = 'AEM-API-Output\\Demos'             # Output Directory for AEM API Runs
 run_name = 'w_ACCC_ACCCSolvents+NonACCCSalt'     # Run Name
-
-useACCC = True                 # Input to use ACCC: Yes = True or No = False
 
 solventcomp = 1                # Solvent Composition: 1 (Single Fixed Composition) or 2 (Larger Matrix)
 solventcomppropbasis = 2       # Solvent Composition Proportionality Basis: 1 (Volume) or 2 (Mass)
@@ -46,7 +44,6 @@ dl = 0                         # Double Layer (DL) Calculations: 0 (No) or 1 (Ye
 ## Initialize the AEM-API Object
 aem = AEM_API(electrolyte=electrolyte,
               accc_electrolyte=accc_electrolyte,
-              useACCC=useACCC,
               solventcomp=solventcomp,
               solventcomppropbasis=solventcomppropbasis,
               saltcomp=saltcomp,
@@ -69,7 +66,7 @@ aem = AEM_API(electrolyte=electrolyte,
 aem.generate_cues()
 
 ## Run AEM
-aem.runAEM(quiet=True)
+aem.runAEM(quiet=False)
 
 ## Process the Output Data & Save 
 aem.process()
