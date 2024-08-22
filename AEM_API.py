@@ -298,7 +298,7 @@ class AEM_API:
         "Report6 -- Activation Energies",
         "Report7 -- Large-Scale Simulation Optimization",
         "Report8 -- Non-convergent cases",
-        "Report9 -- Double-Layer Regions transport analysis",
+        "Report9 --  Double-Layer Regions transport analysis",
         "Report10 -- Electrode surface-charge effects",
         "Report11 -- Summary of Ion Solvation Quantities",
         "Report12 -- Preferential Ion Solvation",
@@ -308,7 +308,8 @@ class AEM_API:
         "Report16 -- Surface Tension and pore filling time over salt conc",
         "Report17 -- Percent pore length filled over time",
         "Report18 -- Ligand-wise cation desolvation energy and time",
-        "Report19 -- Ligand-wise cation desolvation energy and time (accounting for CS)"
+        "Report19 -- Ligand-wise cation desolvation energy and time (accounting for CS)",
+        "Report20 -- Terms relating to structure and Communal Ion Solvation (CS)"
     ]
     # Constructor to initialize AEM_API with electrolyte composition and read AEM data
     def __init__(self, 
