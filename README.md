@@ -20,7 +20,6 @@ The **Advanced Electrolyte Model (AEM) Application Program Interface (API)** is 
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
-- [Usage](#usage)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -31,11 +30,11 @@ The **Advanced Electrolyte Model (AEM) Application Program Interface (API)** is 
 ## About the AEM API
 Shown in the figure below is a block diagram of the AEM API architecture. The diagram is divided into several sections, each elaborating on different aspects of the AEM API, from input parameters to outputs, classes, and reports.
 
-- On the **user level**, there are two major inputs - **Electrolyte Composition** and **Input Parameters**. In the Electrolyte Composition, the user can define up to 10 solvents and up to two salts. It outlines how the solvents and salts are categorized and the parameters that are considered for each. Next, Input Parameters lists the various inputs required for running AEM CLI executable. These inputs are essential for configuring AEM simulation runs and determining the specific conditions under which the model operates.
-- Within the **API itself (AEM_API.py)** there are two classes - the **ElectrolyteComposition Class** and the **AEM_API Class**. The ElectrolyteComposition Class includes functions for managing file dumps, naming compositions, calculating volumes, molarity, concentrations, and other properties. The AEM_API Class contains functions for reading inputs, generating compositions, running simulations using the AEM CLI program, saving logs, exporting files and results, processing data, and saving processed data.
-- The **Outputs** from the API are organized into the **AEM_API_Output** directory in run directories with the name **AEMRun-RunID-RunDate-RunTime**. Each run directory includes the **Reports** and **Plots** folders along with the combined processed data .csv file **(RunID-CPD.csv)** and a run log .json file **(AEMRun-RunID-RunDate-RunTime-Log.json)**. The Reports folder contains different types of reports that the AEM CLI program can generate. These reports cover a wide range of analyses, from key properties summaries and thermodynamic terms to density, viscosity, conductivity, and cation desolvation. Other reports focus on dielectric analysis, transport properties, molar volume, ion-pair formation, self-diffusion coefficients, and ligand-wise analyses, among others. Each report provides detailed insights into specific aspects of the electrolyte compositions and their behaviors under various conditions. The Plots folder contains visual plots for various electrolyte properties.
+- On the **user level**, there are three major inputs - **Electrolyte Composition**, **ACCC Electrolyte Composition**, and **Input Parameters**. In the Electrolyte Composition, the user can define up to 10 solvents (fixed mode) or 5 solvents (matrix mode) and up to two salts. In the ACCC Electrolyte Composition, the user can define up to 10 ACCC solvents (fixed mode) or 5 ACCC solvents (matrix mode) and only one ACCC salt. The ACCC salt chosen must contain all the identifiers for the chosen ACCC solvent. The user can choose between a pure non-ACCC composition, a pure ACCC composition, or a cross composition between non-ACCC and ACCC components. Next, Input Parameters lists the various inputs required for running AEM CLI executable. These inputs are essential for configuring AEM simulation runs and determining the specific conditions under which the model operates.
+- Within the **API itself (AEM_API.py)** there are three classes - the **ElectrolyteComposition Class**, the **ACCCElectrolyteComposition Class**, and the **AEM_API Class**. The ElectrolyteComposition Class includes functions for managing the non-ACCC composition, whereas the ACCCElectrolyteComposition Class includes functions for managing the ACCC composition. The AEM_API Class contains functions for reading inputs, generating compositions, running simulations using the AEM CLI program, saving logs, exporting files and results, processing data, and saving processed data.
+- The **Outputs** from the API are organized into the **AEM_API_Output** directory in run directories with the name **AEMRun-RunID-RunDate-RunTime**. Each run directory includes the **Reports** and **Plots** folders along with the **combined processed data .csv file (RunID-CPD.csv)** and a **run log .json file (AEMRun-RunID-RunDate-RunTime-Log.json)**. The Reports folder contains different types of reports that the AEM CLI program can generate. These reports cover a wide range of analyses, from key properties summaries and thermodynamic terms to density, viscosity, conductivity, and cation desolvation. Other reports focus on dielectric analysis, transport properties, molar volume, ion-pair formation, self-diffusion coefficients, and ligand-wise analyses, among others. Each report provides detailed insights into specific aspects of the electrolyte compositions and their behaviors under various conditions. The Plots folder contains visual plots for various electrolyte properties.
 
-![AEM-API Architecture](https://github.com/RidgetopGroupInc/AEM-API/assets/134314322/d8c554a3-ddc2-45b8-a696-0f14d55cd593)
+![AEM-API Architecture](https://github.com/user-attachments/assets/b18d78b9-b154-471f-8be7-c26f6ba1c041)
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -45,7 +44,7 @@ To get a local copy up and running follow these simple steps.
 ### Prerequisites
 
 - Python 3.7 or higher
-- Git
+- git 2.46.0 or higher
 
 ### Installation
 
@@ -57,63 +56,7 @@ To get a local copy up and running follow these simple steps.
    ```sh
    pip install -r requirements.txt
    ```
-
-<!-- USAGE EXAMPLES -->
-## Usage
-
-### Initialize the Electrolyte Composition
-Define the composition of the solvents and salts.
-
-```python
-from AEM_API import ElectrolyteComposition, AEM_API
-
-solvents = {'EMC': 0.7, 'EC': 0.3}
-salts = {'LiPF6': 1}
-electrolyte_comp = ElectrolyteComposition.by_mass_fraction_and_molality(solvents=solvents, salts=salts)
-```
-
-### Run the AEM Model
-Set up the necessary parameters and execute the AEM model.
-
-```python
-import os
-
-# AEM Directories
-homedir = os.path.expanduser("~")
-AEM_HOME_PATH = rf'{homedir}\Documents\AEM\CLI'
-AEM_PROGRAM_NAME = "aem-2242m-d-accc-dlm.exe"
-
-aem_api = AEM_API(
-    electrolyte=electrolyte_comp, 
-    solventcomp=1, 
-    solventcomppropbasis=2, 
-    tmin=20, 
-    tmax=60, 
-    stepsize=10, 
-    tis=1, 
-    contactangle=90, 
-    porelength=50, 
-    saltconc=0.1, 
-    scaep=0, 
-    dl=0, 
-    output_dir='output', 
-    AEMHomePath=AEM_HOME_PATH, 
-    AEMProgramName=AEM_PROGRAM_NAME
-)
-
-aem_api.generate_cues()
-aem_api.runAEM(quiet=True)
-```
-
-### Process and Plot Data
-Process the output data and generate plots.
-
-```python
-aem_api.process()
-all_data = aem_api.save_processed_data()
-aem_api.plot_processed_data(all_data)
-```
-
+   
 <!-- ROADMAP -->
 ## Roadmap
 See the [open issues](https://github.com/RidgetopGroupInc/AEM-API/issues) for a list of proposed features (and known issues).
