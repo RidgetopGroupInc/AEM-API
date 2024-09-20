@@ -418,7 +418,7 @@ class AEM_API:
     # Method to run the AEM model
     def runDLMExecutable(self):
         print(f"### AEM-API v1.0:: Checking ACCC Access from DLM ...")
-        fp = os.path.join(self.AEMHomePath, DLM_EXECUTABLE)
+        fp = os.path.join(API_HOME_PATH, DLM_EXECUTABLE)
         # Run the executable with the 'check' argument
         p = sp.Popen([fp, 'check'], shell=True, stdout=sp.PIPE, stderr=sp.STDOUT, cwd=self.AEMHomePath)
         # Capture the output
