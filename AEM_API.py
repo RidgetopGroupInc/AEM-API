@@ -29,12 +29,12 @@ API_HOME_PATH = os.path.dirname(os.path.realpath(__file__))
 DLM_EXECUTABLE = "DLM_Executable.exe"
 
 ## SOLVENT AND SALT DIRECTORY PATHS
-SOLVENT_DB = "data\\solventDB.csv"
-SALT_DB = "data\\saltDB.csv"
-AEM_SOLVENTS = "data\\AEM_solvents.csv"
-AEM_SALTS = "data\\AEM_salts.csv"
-AEM_ACCC_SOLVENTS = "data\\AEM_ACCC_solvents.csv"
-AEM_ACCC_SALTS = "data\\AEM_ACCC_salts.csv"
+SOLVENT_DB = os.path.join(API_HOME_PATH, "data", "solventDB.csv")
+SALT_DB = os.path.join(API_HOME_PATH, "data", "saltDB.csv")
+AEM_SOLVENTS = os.path.join(API_HOME_PATH, "data", "AEM_solvents.csv")
+AEM_SALTS = os.path.join(API_HOME_PATH, "data", "AEM_salts.csv")
+AEM_ACCC_SOLVENTS = os.path.join(API_HOME_PATH, "data", "AEM_ACCC_solvents.csv")
+AEM_ACCC_SALTS = os.path.join(API_HOME_PATH, "data", "AEM_ACCC_salts.csv")
     
 ## ElectrolyteComposition CLASS
 class ElectrolyteComposition:
@@ -334,6 +334,7 @@ class AEM_API:
                  run_name=None,
                  AEMHomePath=None,
                  AEMProgramName=None):
+        self.AEMHomePath = AEMHomePath
         DLMout = self.runDLMExecutable()
         if DLMout == '1':
             self.read_AEM_data(salt_csv, solvent_csv)
@@ -380,7 +381,6 @@ class AEM_API:
         else:
             self.run_output_dir = os.path.join(self.output_dir, f"AEMAPIRun_{self.run_name}_{self.run_date}_{self.run_time}")
         os.makedirs(self.run_output_dir, exist_ok=True)
-        self.AEMHomePath = AEMHomePath
     print(f"### AEM-API v1.0:: Starting Program!")
     
     # Method to read AEM data from CSV files
@@ -418,12 +418,9 @@ class AEM_API:
     # Method to run the AEM model
     def runDLMExecutable(self):
         print(f"### AEM-API v1.0:: Checking ACCC Access from DLM ...")
-        # Path to the executable
-        homedir = os.path.expanduser("~")
-        AEM_HOME = rf'{homedir}\Documents\AEM\CLI'   # Path to AEM/CLI/ (Update path if different!)
-        fp = os.path.join(AEM_HOME, DLM_EXECUTABLE)
+        fp = os.path.join(self.AEMHomePath, DLM_EXECUTABLE)
         # Run the executable with the 'check' argument
-        p = sp.Popen([fp, 'check'], shell=True, stdout=sp.PIPE, stderr=sp.STDOUT, cwd=AEM_HOME)
+        p = sp.Popen([fp, 'check'], shell=True, stdout=sp.PIPE, stderr=sp.STDOUT, cwd=self.AEMHomePath)
         # Capture the output
         stdout, _ = p.communicate()  # Capture output
         stdout = stdout.decode('utf-8').strip()  # Decode and strip any extra whitespace/newlines
@@ -735,7 +732,7 @@ class AEM_API:
             src = os.path.join(self.AEMHomePath, report_file)
             dstfolder = os.path.join(self.run_output_dir,"Reports")
             os.makedirs(dstfolder, exist_ok=True)
-            dst = os.path.join(dstfolder, report_file)
+            dst = os.path.join(dstfolder, f"{report_file}.txt")
             if os.path.exists(src):
                 shutil.copy(src, dst)
             else:
