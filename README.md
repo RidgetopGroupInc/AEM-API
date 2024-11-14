@@ -1,5 +1,3 @@
-# Advanced Electrolyte Model (AEM) API
-
 [![Contributors][contributors-shield]][contributors-url]
 [![Forks][forks-shield]][forks-url]
 [![Stargazers][stars-shield]][stars-url]
@@ -7,12 +5,15 @@
 [![MIT License][license-shield]][license-url]
 
 <p align="center">
-  <img src="https://github.com/RidgetopGroupInc/AEM-API/assets/134314322/ae32d001-0d1a-4e53-a9f8-dff35e1bdab5" alt="AEM-API" width="400" height="200">
+  <img src="https://github.com/user-attachments/assets/c2074918-29a9-4309-bfad-a8b43bf791d5" alt="Screenshot 2024-11-14 133347" width="550" height="250">
 </p>
 
-The **Advanced Electrolyte Model (AEM) Application Program Interface (API)** is a supporting software toolbox to the AEM CLI executable, designed to analyze and predict the properties of electrolyte compositions used in various applications. Developed by Ridgetop Group, Inc. and in collaboration with Adarsh Dave (Carnegie Mellon University), this API allows users to create, manage, and simulate electrolyte compositions with Python scripts, leveraging the extensive databases of solvents and salts with the AEM compound library. Additionally, the API combines results from AEM output Report 1, saves that to a .csv file, and provides detailed insights into example key properties such as density, viscosity, conductivity, and ion association populations through graphical plots.
+<div align="justify"> 
+The <b>Advanced Electrolyte Model (AEM) Application Program Interface (API)</b> is a supporting software toolbox to the AEM CLI executable, designed to analyze and predict the properties of electrolyte compositions used in various applications. Developed by Ridgetop Group, Inc. and in collaboration with Adarsh Dave (Carnegie Mellon University), this API allows users to create, manage, and simulate electrolyte compositions with Python scripts, leveraging the extensive databases of solvents and salts with the AEM compound library. Additionally, the API converts generated report files from the .txt to .csv and .json formats,  visualizes any quantity from any of those reports, and shows an example of combining results from AEM output Report 1, saving that to a .csv file, and providing detailed insights into example key properties such as density, viscosity, conductivity, and ion association populations through graphical plots.
+</div>
+<br>
 
-****Link to Repository:** [https://github.com/RidgetopGroupInc/AEM-API](https://github.com/RidgetopGroupInc/AEM-API)**
+**Link to Repository:** [https://github.com/RidgetopGroupInc/AEM-API](https://github.com/RidgetopGroupInc/AEM-API)
 
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
@@ -28,13 +29,16 @@ The **Advanced Electrolyte Model (AEM) Application Program Interface (API)** is 
 
 <!-- ABOUT THE AEM API -->
 ## About the AEM API
+<div align="justify"> 
 Shown in the figure below is a block diagram of the AEM API architecture. The diagram is divided into several sections, each elaborating on different aspects of the AEM API, from input parameters to outputs, classes, and reports.
 
 - On the **user level**, there are three major inputs - **Electrolyte Composition**, **ACCC Electrolyte Composition**, and **Input Parameters**. In the Electrolyte Composition, the user can define up to 10 solvents (fixed mode) or 5 solvents (matrix mode) and up to two salts. In the ACCC Electrolyte Composition, the user can define up to 10 ACCC solvents (fixed mode) or 5 ACCC solvents (matrix mode) and only one ACCC salt. The ACCC salt chosen must contain all the identifiers for the chosen ACCC solvent. The user can choose between a pure non-ACCC composition, a pure ACCC composition, or a cross composition between non-ACCC and ACCC components. Next, Input Parameters lists the various inputs required for running AEM CLI executable. These inputs are essential for configuring AEM simulation runs and determining the specific conditions under which the model operates.
 - Within the **API itself (AEM_API.py)** there are three classes - the **ElectrolyteComposition Class**, the **ACCCElectrolyteComposition Class**, and the **AEM_API Class**. The ElectrolyteComposition Class includes functions for managing the non-ACCC composition, whereas the ACCCElectrolyteComposition Class includes functions for managing the ACCC composition. The AEM_API Class contains functions for reading inputs, generating compositions, running simulations using the AEM CLI program, saving logs, exporting files and results, processing data, and saving processed data.
-- The **Outputs** from the API are organized into the **AEM_API_Output** directory in run directories with the name **AEMRun-RunID-RunDate-RunTime**. Each run directory includes the **Reports** and **Plots** folders along with the **combined processed data .csv file (RunID-CPD.csv)** and a **run log .json file (AEMRun-RunID-RunDate-RunTime-Log.json)**. The Reports folder contains different types of reports that the AEM CLI program can generate. These reports cover a wide range of analyses, from key properties summaries and thermodynamic terms to density, viscosity, conductivity, and cation desolvation. Other reports focus on dielectric analysis, transport properties, molar volume, ion-pair formation, self-diffusion coefficients, and ligand-wise analyses, among others. Each report provides detailed insights into specific aspects of the electrolyte compositions and their behaviors under various conditions. The Plots folder contains visual plots for various electrolyte properties.
+- Within the **AEM_PARSER (AEM_PARSER.py)** there are various classes such as the **aem_run class**, the **aem_report class**, **aem_report01, aem_report02, ....., aem_report20 classes** for each report generated by AEM. Additionally, there various major functions defined such as - the **parseReport function**, the **parse_composition_temperature function**, **parseReport01, parseReport02, ....., parseReport20 functions** for each report, the **aem_convert_to_csv function**, and the the **aem_convert_to_json function**. These classes and functions are responsible to create the .csv and .json files from the default output .txt files from the AEM CLI program. 
+- The **Outputs** from the API are organized into the **AEM_API_Output** directory in run directories with the name **AEMRun-RunID-RunDate-RunTime**. Each run directory includes the **Reports** and a **run log .json file (AEMRun-RunID-RunDate-RunTime-Log.json)**. The Reports folder contains different types of reports generate in .txt, .csv, and .json formats. The **.csv** files are saved in the **Reports\csv** folder, whereas The **.json** files are saved in the **Reports\json** folder. These reports cover a wide range of analyses, from key properties summaries and thermodynamic terms to density, viscosity, conductivity, and cation desolvation. Other reports focus on dielectric analysis, transport properties, molar volume, ion-pair formation, self-diffusion coefficients, and ligand-wise analyses, among others. Each report provides detailed insights into specific aspects of the electrolyte compositions and their behaviors under various conditions.
+</div> 
 
-![AEM-API Architecture](https://github.com/user-attachments/assets/b18d78b9-b154-471f-8be7-c26f6ba1c041)
+![AEM-API Architecture](https://github.com/user-attachments/assets/1d6bc9f2-67f0-491d-9943-8c908aab02ab)
 
 <!-- GETTING STARTED -->
 ## Getting Started
@@ -86,7 +90,7 @@ Distributed under the GNU GPL-3.0 License. See `LICENSE` for more information.
 ### For Technical Enquiries & Assistance
 **_AEM API_**
 - **Arsh Nadkarni** (Applications Engineer, Ridgetop) - [anadkarni@ridgetopgroup.com](mailto:anadkarni@ridgetopgroup.com)
-- **Dr. Basab Goswami** (Battery Simulations Engineer, Ridgetop) - [brdgoswami@ridgetopgroup.com](mailto:brdgoswami@ridgetopgroup.com)
+- **Dr. Basab Ranjan Das Goswami** (Battery Simulations Engineer, Ridgetop) - [brdgoswami@ridgetopgroup.com](mailto:brdgoswami@ridgetopgroup.com)
 
 **_AEM GUI/CLI_**
 - **Christopher Curti** (Senior Software Engineer, Ridgetop) - [ccurti@ridgetopgroup.com](mailto:ccurti@ridgetopgroup.com)
