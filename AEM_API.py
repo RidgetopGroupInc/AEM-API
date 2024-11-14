@@ -1,5 +1,5 @@
 # ============================================================================
-"""          Advanced Electrolyte Model (AEM) v1.1.0 API (w/ACCC)          """
+"""      Advanced Electrolyte Model (AEM) [v2.1.0] API v1.1.0 (w/ACCC)     """
 """ © 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved """
 # ============================================================================
 
