@@ -62,9 +62,16 @@ aem.generate_cues()
 ## Run AEM
 aem.runAEM(quiet=True)
 
+## Visualize the AEM_PARSER Parsed Data 
+report_no = "Report02"   # Report01-20 
+x = "c2"                 # x-axis: Any column from chosen report 
+y = "gamma"              # y-axis: Any column from chosen report 
+aem.plot_parsed_data(x=x, y=y, report_number=report_no)
+
 ## Process the Output Data & Save 
 aem.process()
 all_data = aem.save_processed_data()
 
 ## Plot the Output Data
 aem.plot_processed_data(all_data)
+

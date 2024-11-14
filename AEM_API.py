@@ -1,5 +1,5 @@
 # ============================================================================
-"""          Advanced Electrolyte Model (AEM) v2.1.0 API (w/ACCC)          """
+"""          Advanced Electrolyte Model (AEM) v1.1.0 API (w/ACCC)          """
 """ © 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved """
 # ============================================================================
 
@@ -16,6 +16,7 @@ import uuid
 import os
 import sys
 import shutil
+from AEM_PARSER import aem_run, aem_convert_to_csv, aem_convert_to_json
 
 ## DELIMITERS AND DEFAULT PRECISION VALUES
 delim1 = "|"
@@ -214,7 +215,7 @@ class ElectrolyteComposition:
         salts = cls.normalize_salt_dictionary({salt: salts_moles[salt] / (sum(list(solvents_mass.values()))) * 1000 for salt in salts_moles}, salt_decimals)
         cid = cls.dicts_to_CompositionID(solvents=solvents, salts=salts, solvent_precision=solvent_precision, salt_decimals=salt_decimals)
         d = {"solvents": solvents, "salts": salts, "CompositionID": cid, "solvent_precision": solvent_precision, "salt_decimals": salt_decimals}
-        print(f"### AEM-API v1.0:: CompositionID: {cid}")
+        print(f"### AEM-API v1.1.0:: CompositionID: {cid}")
         return cls(**d, specified_from=specified_from)
 
 ## ACCCElectrolyteComposition CLASS
@@ -381,7 +382,7 @@ class AEM_API:
         else:
             self.run_output_dir = os.path.join(self.output_dir, f"AEMAPIRun_{self.run_name}_{self.run_date}_{self.run_time}")
         os.makedirs(self.run_output_dir, exist_ok=True)
-    print(f"### AEM-API v1.0:: Starting Program!")
+    print(f"### AEM-API v1.1.0:: Starting Program!")
     
     # Method to read AEM data from CSV files
     def read_AEM_data(self, salt_csv, solvent_csv):
@@ -417,7 +418,7 @@ class AEM_API:
 
     # Method to run the AEM model
     def runDLMExecutable(self):
-        print(f"### AEM-API v1.0:: Checking ACCC Access from DLM ...")
+        print(f"### AEM-API v1.1.0:: Checking ACCC Access from DLM ...")
         fp = os.path.join(API_HOME_PATH, DLM_EXECUTABLE)
         # Run the executable with the 'check' argument
         p = sp.Popen([fp, 'check'], shell=True, stdout=sp.PIPE, stderr=sp.STDOUT, cwd=self.AEMHomePath)
@@ -426,12 +427,12 @@ class AEM_API:
         stdout = stdout.decode('utf-8').strip()  # Decode and strip any extra whitespace/newlines
         # Log the output and return it
         if stdout == '1':
-            print(f"### AEM-API v1.0:: ACCC Access Invalid!")
+            print(f"### AEM-API v1.1.0:: ACCC Access Invalid!")
         elif stdout == '6':
-            print(f"### AEM-API v1.0:: ACCC Access Valid")
+            print(f"### AEM-API v1.1.0:: ACCC Access Valid")
         else:
-            print(f"### AEM-API v1.0:: Unknown output: {stdout}")
-        print(f"### AEM-API v1.0:: ACCC Access Check Complete!")
+            print(f"### AEM-API v1.1.0:: Unknown output: {stdout}")
+        print(f"### AEM-API v1.1.0:: ACCC Access Check Complete!")
         return stdout
 
     # Method to generate input cues for the AEM model
@@ -487,7 +488,7 @@ class AEM_API:
             self.cues.append(self.dl)
             self.params["Double Layer (DL) Calculations"] = self.dl
             self.cues.append(0)
-            print(f"### AEM-API v1.0:: Input Parameters: {self.params}")
+            print(f"### AEM-API v1.1.0:: Input Parameters: {self.params}")
         # w/ ACCC case
         elif self.dlmout == '6':
             # Non-ACCC Composition Case
@@ -674,11 +675,11 @@ class AEM_API:
                     self.cues.append(self.dl)
                     self.params["Double Layer (DL) Calculations"] = self.dl
                     self.cues.append(0) # End
-            print(f"### AEM-API v1.0:: Input Parameters: {self.params}")
+            print(f"### AEM-API v1.1.0:: Input Parameters: {self.params}")
     
     # Method to run the AEM model
     def runAEM(self, quiet=True):
-        print(f"### AEM-API v1.0:: Starting Run {self.run_id}...")
+        print(f"### AEM-API v1.1.0:: Starting Run {self.run_id}...")
         if not self.cues:
             raise ValueError("cues not populated, run generate_cues first")
         # generate input byte string
@@ -691,10 +692,10 @@ class AEM_API:
             out = sys.stdout
         fp = os.path.join(self.AEMHomePath, self.aem_exe_filename)
         p = sp.Popen(fp, stdin=sp.PIPE, stdout=out, stderr=sp.STDOUT, cwd=self.AEMHomePath)
-        print(f"### AEM-API v1.0:: Run {self.run_id} Complete!")
+        print(f"### AEM-API v1.1.0:: Run {self.run_id} Complete!")
         p.communicate(inpb)
-        self.save_run_log()
         self.copy_report_files()
+        self.save_run_log()
         self.run_yet = True
     
     # Function to log run summary
@@ -709,7 +710,7 @@ class AEM_API:
                 "input_params": self.params
             }
             log_file = os.path.join(self.run_output_dir, f"AEMRun-{self.run_id}-{self.run_date}-{self.run_time}-Log.json")
-            print(f"### AEM-API v1.0:: Run {self.run_id}: Log saved to {log_file}")
+            print(f"### AEM-API v1.1.0:: Run {self.run_id}: Log saved to {log_file}")
         else:
             log_data = {
                 "run_name": self.run_name,
@@ -721,23 +722,55 @@ class AEM_API:
                 "input_params": self.params
             }
             log_file = os.path.join(self.run_output_dir, f"AEMRun-{self.run_name}-{self.run_date}-{self.run_time}-Log.json")
-            print(f"### AEM-API v1.0:: Run {self.run_name}: Log saved to {log_file}")
+            print(f"### AEM-API v1.1.0:: Run {self.run_name}: Log saved to {log_file}")
         with open(log_file, 'w') as f:
             json.dump(log_data, f, indent=4)
         return None
     
     # Function to copy report files to run_output_dir
     def copy_report_files(self):
+        dstfolder = os.path.join(self.run_output_dir,"Reports")
+        os.makedirs(dstfolder, exist_ok=True)
         for report_file in self.report_files:
             src = os.path.join(self.AEMHomePath, report_file)
-            dstfolder = os.path.join(self.run_output_dir,"Reports")
-            os.makedirs(dstfolder, exist_ok=True)
             dst = os.path.join(dstfolder, f"{report_file}.txt")
             if os.path.exists(src):
                 shutil.copy(src, dst)
             else:
-                print(f"Report file {report_file} not found.")
+                print(f"### AEM-API v1.1.0:: Run {self.run_id}: Report file {report_file} not found.")
+        print(f"### AEM-API v1.1.0:: Run {self.run_id}: Copied generated Report files to {dstfolder}")
+        print(f"### AEM-API v1.1.0:: Run {self.run_id}: Running AEM-PARSER on Report files and converting to .csv and .json...")
+        aem_convert_to_csv(dstfolder)
+        print(f"### AEM-API v1.1.0:: Run {self.run_id}: AEM-PARSER converted Report files to .csv and saved to {dstfolder}\\csv")
+        aem_convert_to_json(dstfolder)
+        print(f"### AEM-API v1.1.0:: Run {self.run_id}: AEM-PARSER converted Report files to .json and saved to {dstfolder}\\json")
     
+    # Function to preview data from parsed report files
+    def plot_parsed_data(self, x, y, report_number):
+        output_dir = os.path.join(self.run_output_dir,"Reports")
+        run = aem_run()
+        run.parse_run(output_dir)
+        fig, ax = plt.subplots(figsize=(20, 6))
+        report = getattr(run, report_number.lower())  # Access report dynamically based on input
+        for s in report.items:
+            x_plot = [d[x] for d in s.data]
+            y_plot = [d[y] for d in s.data]
+            # Generate label with information about solvents, salts, and temperature
+            label = f"Solvents: {s.solvents_str_no_comma()}\nSalts: {s.salts_str_no_comma()}\nTemperature: {s.temperature_str()}"
+            # Plot with scientific formatting
+            ax.plot(x_plot, y_plot, label=label)
+        # Setting titles and labels
+        ax.set_title(f"{y} v/s {x}", fontsize=18, weight='bold')
+        ax.set_xlabel(f"{x}", fontsize=12, fontstyle="italic")
+        ax.set_ylabel(f"{y}", fontsize=12, fontstyle="italic")
+        # Add grid, legend, and scientific format for tick labels
+        ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+        ax.legend(fontsize=10, loc="upper left", bbox_to_anchor=(1, 1))
+        # Set scientific notation for axes if needed
+        ax.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
+        plt.tight_layout()
+        plt.show()
+
     # Method to process the output from the AEM model
     def process(self):
         if not self.run_yet:
@@ -799,9 +832,9 @@ class AEM_API:
     # Function to save processed data  
     def save_processed_data(self):
         if self.run_name is None:
-            print(f"### AEM-API v1.0:: Saving Combined and Processed Data for Run {self.run_id}...")
+            print(f"### AEM-API v1.1.0:: Saving Combined and Processed Data for Run {self.run_id}...")
         else:
-            print(f"### AEM-API v1.0:: Saving Combined and Processed Data for Run {self.run_name}...")
+            print(f"### AEM-API v1.1.0:: Saving Combined and Processed Data for Run {self.run_name}...")
         # Initialize an empty DataFrame to store all processed data
         all_data = pd.DataFrame()
         # Access, display, and save the processed data
@@ -820,9 +853,9 @@ class AEM_API:
             combined_csv_path = os.path.join(self.run_output_dir, f"{self.run_name}_CPD.csv")
         all_data.to_csv(combined_csv_path, index=False)
         if self.run_name is None:
-            print(f"### AEM-API v1.0:: Combined and Processed Data for Run {self.run_id} saved to {combined_csv_path}")
+            print(f"### AEM-API v1.1.0:: Combined and Processed Data for Run {self.run_id} saved to {combined_csv_path}")
         else:
-            print(f"### AEM-API v1.0:: Combined and Processed Data for Run {self.run_name} saved to {combined_csv_path}")
+            print(f"### AEM-API v1.1.0:: Combined and Processed Data for Run {self.run_name} saved to {combined_csv_path}")
         return all_data
     
     # Function to plot processed data
@@ -830,9 +863,9 @@ class AEM_API:
         plot_path = os.path.join(self.run_output_dir, "Plots")
         os.makedirs(plot_path, exist_ok=True)
         if self.run_name is None:
-            print(f"### AEM-API v1.0:: Plotting Combined and Processed Data for Run {self.run_id}...")
+            print(f"### AEM-API v1.1.0:: Plotting Combined and Processed Data for Run {self.run_id}...")
         else:
-            print(f"### AEM-API v1.0:: Plotting Combined and Processed Data for Run {self.run_name}...")
+            print(f"### AEM-API v1.1.0:: Plotting Combined and Processed Data for Run {self.run_name}...")
         # Density vs m,c
         fig, axs = plt.subplots(2, 1, figsize=(10, 12))
         # Plot Density vs. m
@@ -948,7 +981,7 @@ class AEM_API:
         plt.savefig(ctn_plot_path, bbox_inches='tight')
         plt.close()
         if self.run_name is None:
-            print(f"### AEM-API v1.0:: Combined and Processed Data Plots for Run {self.run_id} saved to '{plot_path}'")
+            print(f"### AEM-API v1.1.0:: Combined and Processed Data Plots for Run {self.run_id} saved to '{plot_path}'")
         else:
-            print(f"### AEM-API v1.0:: Combined and Processed Data Plots for Run {self.run_name} saved to '{plot_path}'")
-        print(f"### AEM-API v1.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
+            print(f"### AEM-API v1.1.0:: Combined and Processed Data Plots for Run {self.run_name} saved to '{plot_path}'")
+        print(f"### AEM-API v1.1.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
