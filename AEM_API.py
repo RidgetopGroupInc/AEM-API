@@ -1,5 +1,5 @@
 # ============================================================================
-"""      Advanced Electrolyte Model (AEM) [v2.1.0] API v1.1.0 (w/ACCC)     """
+"""     Advanced Electrolyte Model (AEM) [v2.24.3] API v1.2.0 (w/ACCC)     """
 """ © 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved """
 # ============================================================================
 
@@ -215,7 +215,7 @@ class ElectrolyteComposition:
         salts = cls.normalize_salt_dictionary({salt: salts_moles[salt] / (sum(list(solvents_mass.values()))) * 1000 for salt in salts_moles}, salt_decimals)
         cid = cls.dicts_to_CompositionID(solvents=solvents, salts=salts, solvent_precision=solvent_precision, salt_decimals=salt_decimals)
         d = {"solvents": solvents, "salts": salts, "CompositionID": cid, "solvent_precision": solvent_precision, "salt_decimals": salt_decimals}
-        print(f"### AEM-API v1.1.0:: CompositionID: {cid}")
+        print(f"### AEM-API v1.2.0:: CompositionID: {cid}")
         return cls(**d, specified_from=specified_from)
 
 ## ACCCElectrolyteComposition CLASS
@@ -382,7 +382,7 @@ class AEM_API:
         else:
             self.run_output_dir = os.path.join(self.output_dir, f"AEMAPIRun_{self.run_name}_{self.run_date}_{self.run_time}")
         os.makedirs(self.run_output_dir, exist_ok=True)
-    print(f"### AEM-API v1.1.0:: Starting Program!")
+    print(f"### AEM-API v1.2.0:: Starting Program!")
     
     # Method to read AEM data from CSV files
     def read_AEM_data(self, salt_csv, solvent_csv):
@@ -418,7 +418,7 @@ class AEM_API:
 
     # Method to run the AEM model
     def runDLMExecutable(self):
-        print(f"### AEM-API v1.1.0:: Checking ACCC Access from DLM ...")
+        print(f"### AEM-API v1.2.0:: Checking ACCC Access from DLM ...")
         fp = os.path.join(API_HOME_PATH, DLM_EXECUTABLE)
         # Run the executable with the 'check' argument
         p = sp.Popen([fp, 'check'], shell=True, stdout=sp.PIPE, stderr=sp.STDOUT, cwd=self.AEMHomePath)
@@ -427,12 +427,12 @@ class AEM_API:
         stdout = stdout.decode('utf-8').strip()  # Decode and strip any extra whitespace/newlines
         # Log the output and return it
         if stdout == '1':
-            print(f"### AEM-API v1.1.0:: ACCC Access Invalid!")
+            print(f"### AEM-API v1.2.0:: ACCC Access Invalid!")
         elif stdout == '6':
-            print(f"### AEM-API v1.1.0:: ACCC Access Valid")
+            print(f"### AEM-API v1.2.0:: ACCC Access Valid")
         else:
-            print(f"### AEM-API v1.1.0:: Unknown output: {stdout}")
-        print(f"### AEM-API v1.1.0:: ACCC Access Check Complete!")
+            print(f"### AEM-API v1.2.0:: Unknown output: {stdout}")
+        print(f"### AEM-API v1.2.0:: ACCC Access Check Complete!")
         return stdout
 
     # Method to generate input cues for the AEM model
@@ -488,7 +488,7 @@ class AEM_API:
             self.cues.append(self.dl)
             self.params["Double Layer (DL) Calculations"] = self.dl
             self.cues.append(0)
-            print(f"### AEM-API v1.1.0:: Input Parameters: {self.params}")
+            print(f"### AEM-API v1.2.0:: Input Parameters: {self.params}")
         # w/ ACCC case
         elif self.dlmout == '6':
             # Non-ACCC Composition Case
@@ -675,11 +675,11 @@ class AEM_API:
                     self.cues.append(self.dl)
                     self.params["Double Layer (DL) Calculations"] = self.dl
                     self.cues.append(0) # End
-            print(f"### AEM-API v1.1.0:: Input Parameters: {self.params}")
+            print(f"### AEM-API v1.2.0:: Input Parameters: {self.params}")
     
     # Method to run the AEM model
     def runAEM(self, quiet=True):
-        print(f"### AEM-API v1.1.0:: Starting Run {self.run_id}...")
+        print(f"### AEM-API v1.2.0:: Starting Run {self.run_id}...")
         if not self.cues:
             raise ValueError("cues not populated, run generate_cues first")
         # generate input byte string
@@ -692,7 +692,7 @@ class AEM_API:
             out = sys.stdout
         fp = os.path.join(self.AEMHomePath, self.aem_exe_filename)
         p = sp.Popen(fp, stdin=sp.PIPE, stdout=out, stderr=sp.STDOUT, cwd=self.AEMHomePath)
-        print(f"### AEM-API v1.1.0:: Run {self.run_id} Complete!")
+        print(f"### AEM-API v1.2.0:: Run {self.run_id} Complete!")
         p.communicate(inpb)
         self.copy_report_files()
         self.save_run_log()
@@ -710,7 +710,7 @@ class AEM_API:
                 "input_params": self.params
             }
             log_file = os.path.join(self.run_output_dir, f"AEMRun-{self.run_id}-{self.run_date}-{self.run_time}-Log.json")
-            print(f"### AEM-API v1.1.0:: Run {self.run_id}: Log saved to {log_file}")
+            print(f"### AEM-API v1.2.0:: Run {self.run_id}: Log saved to {log_file}")
         else:
             log_data = {
                 "run_name": self.run_name,
@@ -722,7 +722,7 @@ class AEM_API:
                 "input_params": self.params
             }
             log_file = os.path.join(self.run_output_dir, f"AEMRun-{self.run_name}-{self.run_date}-{self.run_time}-Log.json")
-            print(f"### AEM-API v1.1.0:: Run {self.run_name}: Log saved to {log_file}")
+            print(f"### AEM-API v1.2.0:: Run {self.run_name}: Log saved to {log_file}")
         with open(log_file, 'w') as f:
             json.dump(log_data, f, indent=4)
         return None
@@ -737,17 +737,24 @@ class AEM_API:
             if os.path.exists(src):
                 shutil.copy(src, dst)
             else:
-                print(f"### AEM-API v1.1.0:: Run {self.run_id}: Report file {report_file} not found.")
-        print(f"### AEM-API v1.1.0:: Run {self.run_id}: Copied generated Report files to {dstfolder}")
-        print(f"### AEM-API v1.1.0:: Run {self.run_id}: Running AEM-PARSER on Report files and converting to .csv and .json...")
+                print(f"### AEM-API v1.2.0:: Run {self.run_id}: Report file {report_file} not found.")
+        print(f"### AEM-API v1.2.0:: Run {self.run_id}: Copied generated Report files to {dstfolder}")
+        print(f"### AEM-API v1.2.0:: Run {self.run_id}: Running AEM-PARSER on Report files and converting to .csv and .json...")
         aem_convert_to_csv(dstfolder)
-        print(f"### AEM-API v1.1.0:: Run {self.run_id}: AEM-PARSER converted Report files to .csv and saved to {dstfolder}\\csv")
+        print(f"### AEM-API v1.2.0:: Run {self.run_id}: AEM-PARSER converted Report files to .csv and saved to {dstfolder}\\csv")
         aem_convert_to_json(dstfolder)
-        print(f"### AEM-API v1.1.0:: Run {self.run_id}: AEM-PARSER converted Report files to .json and saved to {dstfolder}\\json")
+        print(f"### AEM-API v1.2.0:: Run {self.run_id}: AEM-PARSER converted Report files to .json and saved to {dstfolder}\\json")
     
     # Function to preview data from parsed report files
     def plot_parsed_data(self, x, y, report_number):
+        plot_dir = os.path.join(self.run_output_dir, "Plots")
+        plot_path = os.path.join(plot_dir, f"AEMOutput-{report_number}-{y}_vs_{x}.png")
+        os.makedirs(plot_dir, exist_ok=True)
         output_dir = os.path.join(self.run_output_dir,"Reports")
+        if self.run_name is None:
+            print(f"### AEM-API v1.2.0:: Plotting {y} v/s {x} from {report_number} for Run {self.run_id}...")
+        else:
+            print(f"### AEM-API v1.2.0:: Plotting {y} v/s {x} from {report_number} for Run {self.run_name}...")
         run = aem_run()
         run.parse_run(output_dir)
         fig, ax = plt.subplots(figsize=(20, 6))
@@ -769,219 +776,11 @@ class AEM_API:
         # Set scientific notation for axes if needed
         ax.ticklabel_format(style='sci', axis='both', scilimits=(0,0))
         plt.tight_layout()
+        plt.savefig(plot_path, bbox_inches='tight')
         plt.show()
-
-    # Method to process the output from the AEM model
-    def process(self):
-        if not self.run_yet:
-            raise ValueError("Run AEM first for this Electrolyte object")
-        with open(self.report_string, 'r') as f:
-            lines = f.readlines()
-        d = {}
-        for num1, line in enumerate(lines):
-            if "Results" in line:
-                num2 = num1 + 1
-                arr = []
-                reading = True
-                while reading:
-                    if "TI Stability" in lines[num2]:
-                        reading = False
-                    else:
-                        arr.append(lines[num2])
-                        num2 += 1
-                d[line] = arr
-        # process keys down to temperature
-        def get_key_single(string):
-            string_in_list = string.strip().split()
-            return float(string_in_list[string_in_list.index('Temp.') + 2])  # TEMP ONLY
-        def get_key_binary(string):
-            k = string.strip().split()
-            i = k.index("+")
-            t = (k[i - 1], k[i + 2], float(k[i - 2]), float(k[i + 1]))  # (salt1,salt2,frac1,frac2)
-            T = float(k[k.index('Temp.') + 2])
-            return t + (T,)  # (salt1,salt2,frac1,frac2,Temp)
-        def find_data_in_txt(list_of_lines):
-            expr = r'\-{75,}'
-            p = re.compile(expr)
-            table_indices = []
-            for ind, line in enumerate(list_of_lines):
-                if p.match(line.strip()):
-                    table_indices.append(ind)
-            string_data = list_of_lines[table_indices[0] + 1:table_indices[1]]
-            def floator(val):
-                try:
-                    x = float(val)
-                except ValueError:
-                    x = '>10000'
-                return x
-            return [[floator(val) for val in line.strip().split()] for line in string_data]
-        # process values to pandas dataframe
-        def data_lines_to_dataframe(list_of_lines, columns):
-            return pd.DataFrame(list_of_lines, columns=columns)
-        columns = ["m", "c", "c_eff_trans", "wt fr salt", "mole fr salt", "density (g/mL)", "cP_mean", "sig1 (eff)", "sig2 (eff)", "S(+)",
-                   "Rational Act.Coef. y+-", "Diff. Coeff. cm^2/s", "Cond (mS) 2", "t+(a)", "t+(b)",
-                   "dissoc (SI)", "dissoc (TI)"]
-        salts_count = len(self.electrolyte.salts) if self.electrolyte and self.electrolyte.salts else 0
-        accc_salts_count = len(self.AEM_ACCC_salts) if self.AEM_ACCC_salts else 0
-        if salts_count == 1 or accc_salts_count == 1:
-            self.data = {get_key_single(k): data_lines_to_dataframe(find_data_in_txt(v), columns) for k, v in d.items()}
-        elif salts_count == 2 or accc_salts_count == 2:
-            self.data = {get_key_binary(k): data_lines_to_dataframe(find_data_in_txt(v), columns) for k, v in d.items()}    
-        self.data_processed = True
-    
-    # Function to save processed data  
-    def save_processed_data(self):
-        if self.run_name is None:
-            print(f"### AEM-API v1.1.0:: Saving Combined and Processed Data for Run {self.run_id}...")
-        else:
-            print(f"### AEM-API v1.1.0:: Saving Combined and Processed Data for Run {self.run_name}...")
-        # Initialize an empty DataFrame to store all processed data
-        all_data = pd.DataFrame()
-        # Access, display, and save the processed data
-        for key, df in self.data.items():
-            #print(f"Key: {key}")
-            #print(df)
-            #print("DataFrame Columns:", df.columns)  # Print the DataFrame columns for debugging
-            # Add a new column to indicate the temperature (previously 'Key')
-            df['Temperature'] = key
-            # Append the DataFrame to the combined DataFrame
-            all_data = pd.concat([all_data, df])
-        # Save the combined DataFrame to a single CSV file
-        if self.run_name is None:
-            combined_csv_path = os.path.join(self.run_output_dir, f"{self.run_id}_CPD.csv")
-        else:
-            combined_csv_path = os.path.join(self.run_output_dir, f"{self.run_name}_CPD.csv")
-        all_data.to_csv(combined_csv_path, index=False)
-        if self.run_name is None:
-            print(f"### AEM-API v1.1.0:: Combined and Processed Data for Run {self.run_id} saved to {combined_csv_path}")
-        else:
-            print(f"### AEM-API v1.1.0:: Combined and Processed Data for Run {self.run_name} saved to {combined_csv_path}")
-        return all_data
-    
-    # Function to plot processed data
-    def plot_processed_data(self, all_data):
-        plot_path = os.path.join(self.run_output_dir, "Plots")
-        os.makedirs(plot_path, exist_ok=True)
-        if self.run_name is None:
-            print(f"### AEM-API v1.1.0:: Plotting Combined and Processed Data for Run {self.run_id}...")
-        else:
-            print(f"### AEM-API v1.1.0:: Plotting Combined and Processed Data for Run {self.run_name}...")
-        # Density vs m,c
-        fig, axs = plt.subplots(2, 1, figsize=(10, 12))
-        # Plot Density vs. m
-        if 'Temperature' in all_data.columns:
-            for temp in all_data['Temperature'].unique():
-                if self.tmin <= temp <= self.tmax:
-                    subset = all_data[all_data['Temperature'] == temp]
-                    axs[0].plot(subset['m'], subset['density (g/mL)'], label=f'{temp}°C', marker='o')
-            axs[0].set_xlabel('m (mol/kg)', fontweight="bold")
-        axs[0].set_ylabel('Density (g/mL)', fontweight='bold')
-        axs[0].set_title('Density vs. Molal Salt Concentration (m)')
-        axs[0].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
-        axs[0].grid(True)
-        # Plot Density vs. c
-        if 'Temperature' in all_data.columns:
-            for temp in all_data['Temperature'].unique():
-                if self.tmin <= temp <= self.tmax:
-                    subset = all_data[all_data['Temperature'] == temp]
-                    axs[1].plot(subset['c'], subset['density (g/mL)'], label=f'{temp}°C', marker='o')
-            axs[1].set_xlabel('c (mol/L)', fontweight="bold")
-        axs[1].set_ylabel('Density (g/mL)', fontweight='bold')
-        axs[1].set_title('Density vs. Molar Salt Concentration (c)')
-        axs[1].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
-        axs[1].grid(True)
-        # Save the combined plot
-        density_plot_path = os.path.join(plot_path, "Density.png")
-        plt.savefig(density_plot_path, bbox_inches='tight')
-        plt.close()
-        # Combined Conductivity vs. m, c
-        fig, axs = plt.subplots(2, 1, figsize=(10, 12))
-        # Plot CC vs. m
-        if 'Temperature' in all_data.columns:
-            for temp in all_data['Temperature'].unique():
-                if self.tmin <= temp <= self.tmax:
-                    subset = all_data[all_data['Temperature'] == temp]
-                    axs[0].plot(subset['m'], subset['Cond (mS) 2'], label=f'{temp}°C', marker='o')
-            axs[0].set_xlabel('m (mol/kg)', fontweight="bold")
-        axs[0].set_ylabel('Combined Conductivity (mS)', fontweight="bold")
-        axs[0].set_title('Combined Conductivity vs. Molal Salt Concentration (m)')
-        axs[0].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
-        axs[0].grid(True)
-        # Plot CC vs. c
-        if 'Temperature' in all_data.columns:
-            for temp in all_data['Temperature'].unique():
-                if self.tmin <= temp <= self.tmax:
-                    subset = all_data[all_data['Temperature'] == temp]
-                    axs[1].plot(subset['c'], subset['Cond (mS) 2'], label=f'{temp}°C', marker='o')
-            axs[1].set_xlabel('c (mol/L)', fontweight="bold")
-        axs[1].set_ylabel('Combined Conductivity (mS)', fontweight='bold')
-        axs[1].set_title('Combined Conductivity vs. Molar Salt Concentration (c)')
-        axs[1].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
-        axs[1].grid(True)
-        # Save the combined plot
-        cc_plot_path = os.path.join(plot_path, "CombinedConductivity.png")
-        plt.savefig(cc_plot_path, bbox_inches='tight')
-        plt.close()
-        # Mean Viscosity vs. m, c
-        fig, axs = plt.subplots(2, 1, figsize=(10, 12))
-        # Plot MV vs. m
-        if 'Temperature' in all_data.columns:
-            for temp in all_data['Temperature'].unique():
-                if self.tmin <= temp <= self.tmax:
-                    subset = all_data[all_data['Temperature'] == temp]
-                    axs[0].plot(subset['m'], subset['cP_mean'], label=f'{temp}°C', marker='o')
-            axs[0].set_xlabel('m (mol/kg)', fontweight="bold")
-        axs[0].set_ylabel('Mean Viscosity (cP)', fontweight='bold')
-        axs[0].set_title('Mean Viscosity vs. Molal Salt Concentration (m)')
-        axs[0].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
-        axs[0].grid(True)
-        # Plot MV vs. c
-        if 'Temperature' in all_data.columns:
-            for temp in all_data['Temperature'].unique():
-                if self.tmin <= temp <= self.tmax:
-                    subset = all_data[all_data['Temperature'] == temp]
-                    axs[1].plot(subset['c'], subset['cP_mean'], label=f'{temp}°C', marker='o')
-            axs[1].set_xlabel('c (mol/L)', fontweight="bold")
-        axs[1].set_ylabel('Mean Viscosity (cP)', fontweight='bold')
-        axs[1].set_title('Mean Viscosity vs. Molar Salt Concentration (c)')
-        axs[1].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
-        axs[1].grid(True)
-        # Save the combined plot
-        mv_plot_path = os.path.join(plot_path, "MeanViscosity.png")
-        plt.savefig(mv_plot_path, bbox_inches='tight')
-        plt.close()
-        # Cation Transference Number vs. m, c
-        fig, axs = plt.subplots(2, 1, figsize=(10, 12))
-        # Plot Cation Transference Number vs. m
-        if 'Temperature' in all_data.columns:
-            for temp in all_data['Temperature'].unique():
-                if self.tmin <= temp <= self.tmax:
-                    subset = all_data[all_data['Temperature'] == temp]
-                    axs[0].plot(subset['m'], subset['t+(a)'], label=f't+(a) {temp}°C', marker='.')
-                    axs[0].plot(subset['m'], subset['t+(b)'], label=f't+(b) {temp}°C', marker='o')
-            axs[0].set_xlabel('m (mol/kg)', fontweight="bold")
-        axs[0].set_ylabel('Cation Transference Number', fontweight='bold')
-        axs[0].set_title('Cation Transference Number vs. Molal Salt Concentration (m)')
-        axs[0].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
-        axs[0].grid(True)
-        # Plot Cation Transference Number vs. c
-        if 'Temperature' in all_data.columns:
-            for temp in all_data['Temperature'].unique():
-                if self.tmin <= temp <= self.tmax:
-                    subset = all_data[all_data['Temperature'] == temp]
-                    axs[1].plot(subset['c'], subset['t+(a)'], label=f't+(a) {temp}°C', marker='.')
-                    axs[1].plot(subset['c'], subset['t+(b)'], label=f't+(b) {temp}°C', marker='o')
-            axs[1].set_xlabel('c (mol/L)', fontweight="bold")
-        axs[1].set_ylabel('Cation Transference Number', fontweight="bold")
-        axs[1].set_title('Cation Transference Number vs. Molar Salt Concentration (c)')
-        axs[1].legend(title='Temperature', bbox_to_anchor=(1.02, 1))
-        axs[1].grid(True)
-        # Save the plot
-        ctn_plot_path = os.path.join(plot_path, "CationTransferenceNumber.png")
-        plt.savefig(ctn_plot_path, bbox_inches='tight')
         plt.close()
         if self.run_name is None:
-            print(f"### AEM-API v1.1.0:: Combined and Processed Data Plots for Run {self.run_id} saved to '{plot_path}'")
+            print(f"### AEM-API v1.2.0:: {y} v/s {x} from {report_number} for Run {self.run_id} saved as a data plot to '{plot_path}'")
         else:
-            print(f"### AEM-API v1.1.0:: Combined and Processed Data Plots for Run {self.run_name} saved to '{plot_path}'")
-        print(f"### AEM-API v1.1.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
+            print(f"### AEM-API v1.2.0:: {y} v/s {x} from {report_number} for Run {self.run_name} saved as a data plot to '{plot_path}'")
+        print(f"### AEM-API v1.2.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
