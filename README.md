@@ -60,6 +60,15 @@ To get a local copy up and running follow these simple steps.
    ```sh
    pip install -r requirements.txt
    ```
+3. Navigate to repo directory
+   ```sh
+   cd AEM-API
+   ```
+3. Run the desired **Single-Fixed Mode** or **Matrix Mode** demo script
+   ```sh
+   python -m Single_Fixed_Mode_Examples.AEM_API_wACCC_nonACCCcomp
+   python -m Matrix_Mode_Examples.AEM_API_wACCC_nonACCCcomp_4solvents_2salts_wCMF_matrix
+   ```
    
 <!-- ROADMAP -->
 ## Roadmap
@@ -90,7 +99,6 @@ Distributed under the GNU GPL-3.0 License. See `LICENSE` for more information.
 ### For Technical Enquiries & Assistance
 **_AEM API_**
 - **Arsh Nadkarni** (Applications Engineer, Ridgetop) - [anadkarni@ridgetopgroup.com](mailto:anadkarni@ridgetopgroup.com)
-- **Dr. Basab Ranjan Das Goswami** (Battery Simulations Engineer, Ridgetop) - [brdgoswami@ridgetopgroup.com](mailto:brdgoswami@ridgetopgroup.com)
 
 **_AEM GUI/CLI_**
 - **Christopher Curti** (Senior Software Engineer, Ridgetop) - [ccurti@ridgetopgroup.com](mailto:ccurti@ridgetopgroup.com)

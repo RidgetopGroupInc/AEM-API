@@ -1,9 +1,11 @@
 # ============================================================================
-"""     Advanced Electrolyte Model (AEM) [v2.24.3] API v1.2.0 (w/ACCC)     """
-""" © 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved """
+"""     Advanced Electrolyte Model (AEM) [v2.24.3] API v1.3.0 (w/ACCC)     """
+""" © 2025 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved """
 # ============================================================================
 
 ## IMPORT LIBRARIES AND DEPENDENCIES
+import errno
+import time
 import subprocess as sp
 import pandas as pd
 import numpy as np
@@ -39,7 +41,6 @@ AEM_ACCC_SALTS = os.path.join(API_HOME_PATH, "data", "AEM_ACCC_salts.csv")
     
 ## ElectrolyteComposition CLASS
 class ElectrolyteComposition:
-    # Constructor to initialize Electrolyte Composition
     def __init__(self, 
                  solvents=None, 
                  salts=None, 
@@ -51,33 +52,31 @@ class ElectrolyteComposition:
                  salt_decimals=default_salt_decimals):
         self.solvents = dict() if solvents is None else solvents
         self.salts = dict() if salts is None else salts
-        self.specified_from = "" if specified_from is None else specified_from  # Info from class method used to create
+        self.specified_from = "" if specified_from is None else specified_from
         self.solvent_DB = self.load_solvent_DB() if solvent_DB is None else solvent_DB
         self.salt_DB = self.load_salt_DB() if salt_DB is None else salt_DB
         self.CompositionID = "" if CompositionID is None else CompositionID
         self.solvent_precision = solvent_precision
         self.salt_decimals = salt_decimals
-        self.date = datetime.datetime.now().strftime("%m/%d/%Y")  # Get date of composition creation
-        if len(salts) > 1:
-            raise NotImplementedError("Binary salts not implemented yet - Ady")
-    # Function to dump information about Solvents and Salts
+        self.date = datetime.datetime.now().strftime("%m/%d/%Y")
+
     def dump_info(self):
         filt_solvent_info = self.solvent_DB[self.solvent_DB.name.isin(self.solvents.keys())].to_json(orient="records")
         filt_salt_info = self.salt_DB[self.salt_DB.name.isin(self.salts.keys())].to_json(orient="records")
         return {"solvents": filt_solvent_info, "salts": filt_salt_info}
-    # Function to generate a Composition Name
+
     def name_composition(self):
         rep = self.CompositionID.replace("_", "")
         return rep.replace("|", "")
-    # Placeholder function for solution volume conversion (TBD)
+
     def to_solution_volume(self):
-        return
-    # Static Method Function to convert CompositionID into a parsable format
+        return  # Placeholder, no changes needed here
+
     @staticmethod
     def cid_to_parsable(cid):
         rep = cid.replace("_", "")
         return rep.replace("|", "")
-    # Static Method Function to normalize the Solvent dictionary
+
     @staticmethod
     def normalize_solvent_dictionary(solvents, solvent_precision):
         total = float(sum(solvents.values()))
@@ -85,61 +84,60 @@ class ElectrolyteComposition:
         _solvents_nonzero = {solvent: _solvents[solvent] for solvent in _solvents.keys() if _solvents[solvent] != 0}
         ordered_solvents = OrderedDict(sorted(_solvents_nonzero.items(), key=lambda tup: tup[0]))
         return ordered_solvents
-    # Static Method Function to normalize the Salt dictionary
+
     @staticmethod
     def normalize_salt_dictionary(salts, salt_decimal):
         _salts = {salt: round(salts[salt], salt_decimal) for salt in salts.keys()}
         _salts_nonzero = {salt: _salts[salt] for salt in _salts.keys() if _salts[salt] != 0.0}
-        ordered_salts = OrderedDict(sorted(_salts.items(), key=lambda tup: tup[0]))
+        ordered_salts = OrderedDict(sorted(_salts_nonzero.items(), key=lambda tup: tup[0]))
         return ordered_salts
-    # Static Method Function to load the Solvent Database
+
     @staticmethod
     def load_solvent_DB(data_path=API_HOME_PATH, filename=SOLVENT_DB):
         path = os.path.join(API_HOME_PATH, filename)
         return pd.read_csv(path)
-    # Static Method Function to load the Salt Database
+
     @staticmethod
     def load_salt_DB(data_path=API_HOME_PATH, filename=SALT_DB):
         path = os.path.join(API_HOME_PATH, filename)
         return pd.read_csv(path)
-    # Static Method Function to create a CompositionID from dictionaries
+
     @staticmethod
     def dicts_to_CompositionID(solvents={}, salts={}, solvent_precision=default_solvent_precision, salt_decimals=default_salt_decimals):
         solvents_normalized = ElectrolyteComposition.normalize_solvent_dictionary(solvents, solvent_precision)
-        if len(salts) != 0:
+        parts = [solvents_normalized.keys(), vals2str(solvents_normalized.values())]
+        if salts:
             salts_normalized = ElectrolyteComposition.normalize_salt_dictionary(salts, salt_decimals)
-            return delim1.join([delim2.join(x) for x in [solvents_normalized.keys(), vals2str(solvents_normalized.values()), salts_normalized.keys(), vals2str(salts_normalized.values())]])
-        else:
-            return delim1.join([delim2.join(x) for x in [solvents_normalized.keys(), vals2str(solvents_normalized.values())]])
-    # Static Method Function to convert CompositionID to dictionaries
+            parts.extend([salts_normalized.keys(), vals2str(salts_normalized.values())])
+        return delim1.join([delim2.join(x) for x in parts])
+
     @staticmethod
     def CompositionID_to_dicts(CompositionID):
         ls = CompositionID.split(delim1)
         solvent_names = ls[0].split(delim2)
         solvent_mfs = [i for i in ls[1].split(delim2)]
         assert len(solvent_names) == len(solvent_mfs), "CompositionID is invalid, different lengths for solvent_names vs solvent_mfs"
-        assert 0 not in solvent_mfs, "Zeros not allowed in defining composition"
+        assert '0' not in solvent_mfs, "Zeros not allowed in defining composition"
         solvent_mfs_precisions = list(set([len(i) if len(i) > 1 else 2 for i in solvent_mfs]))
-        assert len(solvent_mfs_precisions) == 1, "Length (precision) of solvent mass fractions must be identical: {}".format(solvent_mfs_precisions)
+        assert len(solvent_mfs_precisions) == 1, f"Length (precision) of solvent mass fractions must be identical: {solvent_mfs_precisions}"
         solvent_precision = int(10 ** int(solvent_mfs_precisions[0]))
         solvent_mfs = [float(i) for i in solvent_mfs]
         solvents = ElectrolyteComposition.normalize_solvent_dictionary({solvent_names[i]: solvent_mfs[i] for i in range(len(solvent_names))}, solvent_precision)
         salt_decimals = default_salt_decimals
-        if len(ls) > 2:
+        salts = {}
+        if len(ls) > 2:  # Salts are present
             assert len(ls) == 4, "If salts are added, must define molality"
             salt_names = ls[2].split(delim2)
             molality = [float(i) for i in ls[3].split(delim2)]
             assert len(salt_names) == len(molality), "CompositionID is invalid, different lengths for salt_names vs molality"
             salts = ElectrolyteComposition.normalize_salt_dictionary({salt_names[i]: molality[i] for i in range(len(salt_names))}, salt_decimals)
-        else:
-            salts = {}
         return {"solvents": solvents, "salts": salts, "solvent_precision": solvent_precision, "salt_decimals": salt_decimals}
-    # Class Method Functions to create an instance from a CompositionID
+
     @classmethod
     def by_CompositionID(cls, CompositionID):
         dicts = cls.CompositionID_to_dicts(CompositionID)
         return cls(**dicts, CompositionID=CompositionID, specified_from=json.dumps({"CompositionID": CompositionID}))
-    # Class Method Function to create an instance by Mass (To be verified with Ady or other AEM Staff)
+
     @classmethod
     def by_mass(cls, solvents={}, salts={}, solvent_precision=default_solvent_precision, salt_decimals=default_salt_decimals):
         solvents_orig = solvents.copy()
@@ -147,29 +145,29 @@ class ElectrolyteComposition:
         total_solvent_mass = sum(solvents.values())
         solvents_normalized = {solvent: (mass / total_solvent_mass) for solvent, mass in solvents.items()}
         solvents_normalized = cls.normalize_solvent_dictionary(solvents_normalized, solvent_precision)
-        if len(salts) != 0:
+        salts_normalized = {}
+        if salts:
             total_solvent_mass_kg = total_solvent_mass / 1000.0  # Convert to kilograms
             salts_normalized = {salt: (mass / total_solvent_mass_kg) for salt, mass in salts.items()}
             salts_normalized = cls.normalize_salt_dictionary(salts_normalized, salt_decimals)
-        else:
-            salts_normalized = salts
         cid = cls.dicts_to_CompositionID(solvents=solvents_normalized, salts=salts_normalized, solvent_precision=solvent_precision, salt_decimals=salt_decimals)
         d = {"solvents": solvents_normalized, "salts": salts_normalized, "CompositionID": cid, "solvent_precision": solvent_precision, "salt_decimals": salt_decimals}
         return cls(**d, specified_from=json.dumps({"by_mass": {"solvents": solvents_orig, "salts": salts_orig}}))
-    # Class Method Function to create an instance by Mass Fraction and Molality
+
     @classmethod
     def by_mass_fraction_and_molality(cls, solvents={}, salts={}, solvent_precision=default_solvent_precision, salt_decimals=default_salt_decimals):
         solvents_orig = solvents.copy()
         salts_orig = salts.copy()
         solvents_normalized = cls.normalize_solvent_dictionary(solvents, solvent_precision)
-        if len(salts) != 0:
+        
+        salts_normalized = {}
+        if salts:
             salts_normalized = cls.normalize_salt_dictionary(salts, salt_decimals)
-        else:
-            salts_normalized = salts
+        
         cid = cls.dicts_to_CompositionID(solvents=solvents_normalized, salts=salts_normalized, solvent_precision=solvent_precision, salt_decimals=salt_decimals)
         d = {"solvents": solvents_normalized, "salts": salts_normalized, "CompositionID": cid, "solvent_precision": solvent_precision, "salt_decimals": salt_decimals}
         return cls(**d, specified_from=json.dumps({"by_mass_fraction_and_molality": {"solvents": solvents_orig, "salts": salts_orig}}))
-    # Class Method Function to create an instance by Solution Volume
+
     @classmethod
     def by_solution_volume(cls, volumes={}, densities={}, solvent_precision=default_solvent_precision, salt_decimals=default_salt_decimals):
         solvent_DB = cls.load_solvent_DB()
@@ -182,40 +180,43 @@ class ElectrolyteComposition:
         solvents_mass = {}
         salts_moles = {}
         assert set(volumes.keys()) == set(densities.keys()), "Same keys must be in each of volumes and densities"
-        total_dose_masses = {solution: volumes[solution] / 1000 * densities[solution] for solution in volumes.keys()}  # this is in grams
+        total_dose_masses = {solution: volumes[solution] / 1000 * densities[solution] for solution in volumes.keys()}  # in grams
+        
         for solution in total_dose_masses.keys():
-            solution_comp = cls.CompositionID_to_dicts(solution)  # solution_comp["solvents"] is m.f.; '' ["salts"] is molal
+            solution_comp = cls.CompositionID_to_dicts(solution)
             source_solvent_precision = int(solution_comp["solvent_precision"])
-            # BOTTLE LEVEL
             solution_total_salt_mass = 0
-            if len(solution_comp["salts"]) != 0:
+            
+            if solution_comp["salts"]:
                 for salt in solution_comp["salts"].keys():
-                    assert salt in salt_DB.name.values, "Salt proposed that is not in salt_DB, please check! - {}".format(salt)
+                    assert salt in salt_DB.name.values, f"Salt proposed that is not in salt_DB, please check! - {salt}"
                     mm = float(salt_DB[salt_DB.name == salt]["molar mass"].iloc[0])
                     m = solution_comp["salts"][salt]
-                    solution_total_salt_mass += mm * m  # g/mol * molality of single salt = mass of this salt in bottle
+                    solution_total_salt_mass += mm * m  # g/mol * molality of single salt
+                
             solution_salt_mass_fraction = solution_total_salt_mass / (solution_total_salt_mass + 1000)
             solution_solvent_mass_fraction = 1 - solution_salt_mass_fraction
-            # DOSE LEVEL
             dose_total_solvent_mass = solution_solvent_mass_fraction * total_dose_masses[solution]
+            
             for solvent in solution_comp["solvents"].keys():
                 if solvent not in solvents_mass:
                     solvents_mass[solvent] = dose_total_solvent_mass * solution_comp["solvents"][solvent] / source_solvent_precision
                 else:
                     solvents_mass[solvent] += dose_total_solvent_mass * solution_comp["solvents"][solvent] / source_solvent_precision
-            if len(solution_comp["salts"]) != 0:
+            
+            if solution_comp["salts"]:
                 for salt in solution_comp["salts"].keys():
                     m = solution_comp["salts"][salt]
                     if salt not in salts_moles:
                         salts_moles[salt] = m * dose_total_solvent_mass / 1000
                     else:
                         salts_moles[salt] += m * dose_total_solvent_mass / 1000
-        # EVERYTHING HAS BEEN TOTALED
+        
         solvents = cls.normalize_solvent_dictionary(solvents_mass, solvent_precision)
-        salts = cls.normalize_salt_dictionary({salt: salts_moles[salt] / (sum(list(solvents_mass.values()))) * 1000 for salt in salts_moles}, salt_decimals)
+        salts = cls.normalize_salt_dictionary({salt: salts_moles[salt] / (sum(list(solvents_mass.values())) / 1000) for salt in salts_moles}, salt_decimals)
         cid = cls.dicts_to_CompositionID(solvents=solvents, salts=salts, solvent_precision=solvent_precision, salt_decimals=salt_decimals)
         d = {"solvents": solvents, "salts": salts, "CompositionID": cid, "solvent_precision": solvent_precision, "salt_decimals": salt_decimals}
-        print(f"### AEM-API v1.2.0:: CompositionID: {cid}")
+        print(f"### AEM-API v1.3.0:: CompositionID: {cid}")
         return cls(**d, specified_from=specified_from)
 
 ## ACCCElectrolyteComposition CLASS
@@ -319,6 +320,8 @@ class AEM_API:
                  salt_csv=AEM_SALTS, 
                  solvent_csv=AEM_SOLVENTS,
                  solventcomp=None,
+                 cmfoption=None,
+                 cmfsolventindex=None,
                  solventcomppropbasis=None,
                  saltcomp=None,
                  totalsaltconc=None, 
@@ -358,6 +361,8 @@ class AEM_API:
         self.report_string = os.path.join(AEMHomePath,"Report1 -- Summary of Key Properties")
         self.dlmout = DLMout
         self.solventcomp = solventcomp
+        self.cmfoption = cmfoption
+        self.cmfsolventindex = cmfsolventindex
         self.solventcomppropbasis = solventcomppropbasis
         self.saltcomp = saltcomp
         self.totalsaltconc = totalsaltconc
@@ -382,7 +387,7 @@ class AEM_API:
         else:
             self.run_output_dir = os.path.join(self.output_dir, f"AEMAPIRun_{self.run_name}_{self.run_date}_{self.run_time}")
         os.makedirs(self.run_output_dir, exist_ok=True)
-    print(f"### AEM-API v1.2.0:: Starting Program!")
+    print(f"### AEM-API v1.3.0:: Starting Program!")
     
     # Method to read AEM data from CSV files
     def read_AEM_data(self, salt_csv, solvent_csv):
@@ -418,7 +423,7 @@ class AEM_API:
 
     # Method to run the AEM model
     def runDLMExecutable(self):
-        print(f"### AEM-API v1.2.0:: Checking ACCC Access from DLM ...")
+        print(f"### AEM-API v1.3.0:: Checking ACCC Access from DLM ...")
         fp = os.path.join(API_HOME_PATH, DLM_EXECUTABLE)
         # Run the executable with the 'check' argument
         p = sp.Popen([fp, 'check'], shell=True, stdout=sp.PIPE, stderr=sp.STDOUT, cwd=self.AEMHomePath)
@@ -427,12 +432,12 @@ class AEM_API:
         stdout = stdout.decode('utf-8').strip()  # Decode and strip any extra whitespace/newlines
         # Log the output and return it
         if stdout == '1':
-            print(f"### AEM-API v1.2.0:: ACCC Access Invalid!")
+            print(f"### AEM-API v1.3.0:: ACCC Access Invalid!")
         elif stdout == '6':
-            print(f"### AEM-API v1.2.0:: ACCC Access Valid")
+            print(f"### AEM-API v1.3.0:: ACCC Access Valid")
         else:
-            print(f"### AEM-API v1.2.0:: Unknown output: {stdout}")
-        print(f"### AEM-API v1.2.0:: ACCC Access Check Complete!")
+            print(f"### AEM-API v1.3.0:: Unknown output: {stdout}")
+        print(f"### AEM-API v1.3.0:: ACCC Access Check Complete!")
         return stdout
 
     # Method to generate input cues for the AEM model
@@ -443,88 +448,92 @@ class AEM_API:
         if self.dlmout == '1':
             self.cues.append(self.solventcomp)
             self.params["Solvent Composition"] = self.solventcomp
-            self.cues.append(self.solventcomppropbasis)
-            self.params["Solvent Composition Proportionality Basis"] = self.solventcomppropbasis
-            number_of_solvents = len(self.electrolyte.solvents)
-            assert number_of_solvents <= 10, "Number of solvents must be no greater than 10"
-            self.cues.append(number_of_solvents)
-            self.params["Number of Solvents"] = number_of_solvents
-            for solvent in self.electrolyte.solvents.keys():
-                self.cues.append(self.AEM_solvents[solvent][0])  # append cues
-            if len(self.electrolyte.solvents.keys()) > 1:  # check if not pure
-                for solvent in self.electrolyte.solvents:
-                    # append masses
-                    self.cues.append(self.electrolyte.solvents[solvent])
-            number_of_salts = len(self.electrolyte.salts)
-            assert number_of_solvents <= 2, "Number of solvents must be no greater than 2"
-            self.cues.append(number_of_salts)
-            self.params["Number of Salts"] = number_of_salts
-            for salt in self.electrolyte.salts.keys():
-                self.cues.append(self.AEM_salts[salt][0])  # append self.cues
-            if number_of_salts > 1:
-                self.cues.append(self.saltcomp)  # specify single fixed salt prop
-                self.params["Salt Composition Proportion Mode"] = self.saltcomp
-                for salt in self.electrolyte.salts:
-                    # append molalities
-                    self.cues.append(self.electrolyte.salts[salt])
-            self.cues.append(self.totalsaltconc)
-            self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
-            self.cues.append(self.tmin)
-            self.params["Minimum Temperature"] = self.tmin
-            self.cues.append(self.tmax)
-            self.params["Maximum Temperature"] = self.tmax
-            self.cues.append(self.stepsize)
-            self.params["Temperature Step Size"] = self.stepsize
-            self.cues.append(self.tis)
-            self.params["Method for Triple-Ion Stability"] = self.tis
-            self.cues.append(self.contactangle)
-            self.params["Contact Angle"] = self.contactangle
-            self.cues.append(self.porelength)
-            self.params["Pore Length"] = self.porelength
-            self.cues.append(self.saltconc)
-            self.params["Salt Concentration of Interest"] = self.saltconc
-            self.cues.append(self.scaep)
-            self.params["Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations"] = self.scaep
-            self.cues.append(self.dl)
-            self.params["Double Layer (DL) Calculations"] = self.dl
-            self.cues.append(0)
-            print(f"### AEM-API v1.2.0:: Input Parameters: {self.params}")
-        # w/ ACCC case
-        elif self.dlmout == '6':
-            # Non-ACCC Composition Case
-            if self.accc_electrolyte is None:
-                self.cues.append(self.solventcomp)
-                self.params["Solvent Composition"] = self.solventcomp
+            # Single-Fixed Mode
+            if self.solventcomp == 1:
                 self.cues.append(self.solventcomppropbasis)
                 self.params["Solvent Composition Proportionality Basis"] = self.solventcomppropbasis
-                accc_solvents = 0
-                accc_salts = 0
-                non_accc_solvents = len(self.electrolyte.solvents)
-                non_accc_salts = len(self.electrolyte.salts)
-                number_of_solvents = non_accc_solvents + accc_solvents
-                number_of_salts = non_accc_salts + accc_salts
+                number_of_solvents = len(self.electrolyte.solvents)
                 assert number_of_solvents <= 10, "Number of solvents must be no greater than 10"
-                assert number_of_salts <= 2, "Number of solvents must be no greater than 2"
                 self.cues.append(number_of_solvents)
                 self.params["Number of Solvents"] = number_of_solvents
-                self.cues.append(accc_solvents)
-                self.params["Number of ACCC Solvents"] = accc_solvents
                 for solvent in self.electrolyte.solvents.keys():
-                    self.cues.append(self.AEM_solvents[solvent][0])
+                    self.cues.append(self.AEM_solvents[solvent][0])  # append cues
                 if len(self.electrolyte.solvents.keys()) > 1:  # check if not pure
                     for solvent in self.electrolyte.solvents:
-                        self.cues.append(self.electrolyte.solvents[solvent]) # append masses
+                        # append masses
+                        self.cues.append(self.electrolyte.solvents[solvent])
+                number_of_salts = len(self.electrolyte.salts)
+                assert number_of_salts <= 2, "Number of salts must be no greater than 2"
                 self.cues.append(number_of_salts)
                 self.params["Number of Salts"] = number_of_salts
-                self.cues.append(accc_salts)
-                self.params["Number of ACCC Salts"] = accc_salts
+                for salt in self.electrolyte.salts.keys():
+                    self.cues.append(self.AEM_salts[salt][0])  # append self.cues
+                if number_of_salts > 1:
+                    self.cues.append(self.saltcomp)  # specify single fixed salt prop
+                    self.params["Salt Composition Proportion Mode"] = self.saltcomp
+                    if self.saltcomp == 1:
+                        for salt in self.electrolyte.salts:
+                            # append molalities
+                            self.cues.append(self.electrolyte.salts[salt])
+                self.cues.append(self.totalsaltconc)
+                self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
+                self.cues.append(self.tmin)
+                self.params["Minimum Temperature"] = self.tmin
+                self.cues.append(self.tmax)
+                self.params["Maximum Temperature"] = self.tmax
+                self.cues.append(self.stepsize)
+                self.params["Temperature Step Size"] = self.stepsize
+                self.cues.append(self.tis)
+                self.params["Method for Triple-Ion Stability"] = self.tis
+                self.cues.append(self.contactangle)
+                self.params["Contact Angle"] = self.contactangle
+                self.cues.append(self.porelength)
+                self.params["Pore Length"] = self.porelength
+                self.cues.append(self.saltconc)
+                self.params["Salt Concentration of Interest"] = self.saltconc
+                self.cues.append(self.scaep)
+                self.params["Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations"] = self.scaep
+                self.cues.append(self.dl)
+                self.params["Double Layer (DL) Calculations"] = self.dl
+                self.cues.append(0)
+            # Matrix Mode
+            elif self.solventcomp == 2:
+                number_of_solvents = len(self.electrolyte.solvents)
+                assert number_of_solvents <= 5, "Number of solvents must be no greater than 5"
+                self.cues.append(number_of_solvents)
+                self.params["Number of Solvents"] = number_of_solvents
+                if number_of_solvents > 2:
+                    self.cues.append(cmfoption)
+                    self.params["Constant Mass Fraction Option"] = cmfoption
+                solvent_list = list(self.electrolyte.solvents.keys())
+                if self.cmfsolventindex is None:
+                    if self.cmfoption == 1:  # CMF is enabled but no index provided
+                        raise ValueError("cmfsolventindex must be provided when cmfoption is 1. Got None.")
+                    self.cmfsolventindex = 0  # Default to 0 if CMF is not enabled
+                if not (0 <= self.cmfsolventindex < len(solvent_list)):
+                    raise ValueError(f"cmfsolventindex must be between 0 and {len(solvent_list) - 1}. Got {self.cmfsolventindex}.")
+                cmf_applied = False
+                for index, solvent in enumerate(self.electrolyte.solvents.keys()):
+                    self.cues.append(self.AEM_solvents[solvent][0])  # Append solvent cue
+                    if self.cmfoption == 1 and not cmf_applied:
+                        if index == self.cmfsolventindex:
+                            is_last_solvent = (self.cmfsolventindex == len(solvent_list) - 1)
+                            self.cues.append(0 if not is_last_solvent else 1)  # CMF indicator (0 for First, 1 for Last)
+                            self.cues.append(self.electrolyte.solvents[solvent])  # Append mass fraction for CMF solvent
+                            self.params["Constant Mass Fraction Solvent"] = f"{solvent}"
+                            cmf_applied = True  # Stop further CMF indicators
+                        else:
+                            self.cues.append(0)  # CMF indicator (0 for non-CMF solvents before CMF solvent)
+                self.cues.append(number_of_salts)
+                self.params["Number of Salts"] = number_of_salts
                 for salt in self.electrolyte.salts.keys():
                     self.cues.append(self.AEM_salts[salt][0])  # append self.cues
                 if number_of_salts > 1:
                     self.cues.append(self.saltcomp)
                     self.params["Salt Composition Proportion Mode"] = self.saltcomp
-                    for salt in self.electrolyte.salts:
-                        self.cues.append(self.electrolyte.salts[salt]) # append molalities/molarities
+                    if self.saltcomp == 1:
+                        for salt in self.electrolyte.salts:
+                            self.cues.append(self.electrolyte.salts[salt]) # append molalities/molarities
                 self.cues.append(self.totalsaltconc)
                 self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
                 self.cues.append(self.tmin)
@@ -546,154 +555,458 @@ class AEM_API:
                 self.cues.append(self.dl)
                 self.params["Double Layer (DL) Calculations"] = self.dl
                 self.cues.append(0) # End
+            print(f"### AEM-API v1.3.0:: Input Parameters: {self.params}")
+        # w/ ACCC case
+        elif self.dlmout == '6':
+            # Non-ACCC Composition Case
+            if self.accc_electrolyte is None:
+                self.cues.append(self.solventcomp)
+                self.params["Solvent Composition"] = self.solventcomp
+                # Single-Fixed Composition
+                if self.solventcomp == 1:
+                    self.cues.append(self.solventcomppropbasis)
+                    self.params["Solvent Composition Proportionality Basis"] = self.solventcomppropbasis
+                    accc_solvents = 0
+                    accc_salts = 0
+                    non_accc_solvents = len(self.electrolyte.solvents)
+                    non_accc_salts = len(self.electrolyte.salts)
+                    number_of_solvents = non_accc_solvents + accc_solvents
+                    number_of_salts = non_accc_salts + accc_salts
+                    assert number_of_solvents <= 10, "Number of solvents must be no greater than 10"
+                    assert number_of_salts <= 2, "Number of salts must be no greater than 2"
+                    self.cues.append(number_of_solvents)
+                    self.params["Number of Solvents"] = number_of_solvents
+                    self.cues.append(accc_solvents)
+                    self.params["Number of ACCC Solvents"] = accc_solvents
+                    for solvent in self.electrolyte.solvents.keys():
+                        self.cues.append(self.AEM_solvents[solvent][0])
+                    if len(self.electrolyte.solvents.keys()) > 1:  # check if not pure
+                        for solvent in self.electrolyte.solvents:
+                            self.cues.append(self.electrolyte.solvents[solvent]) # append masses
+                    self.cues.append(number_of_salts)
+                    self.params["Number of Salts"] = number_of_salts
+                    self.cues.append(accc_salts)
+                    self.params["Number of ACCC Salts"] = accc_salts
+                    for salt in self.electrolyte.salts.keys():
+                        self.cues.append(self.AEM_salts[salt][0])  # append self.cues
+                    if number_of_salts > 1:
+                        self.cues.append(self.saltcomp)
+                        self.params["Salt Composition Proportion Mode"] = self.saltcomp
+                        if self.saltcomp == 1:
+                            for salt in self.electrolyte.salts:
+                                self.cues.append(self.electrolyte.salts[salt]) # append molalities/molarities
+                    self.cues.append(self.totalsaltconc)
+                    self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
+                    self.cues.append(self.tmin)
+                    self.params["Minimum Temperature"] = self.tmin
+                    self.cues.append(self.tmax)
+                    self.params["Maximum Temperature"] = self.tmax
+                    self.cues.append(self.stepsize)
+                    self.params["Temperature Step Size"] = self.stepsize
+                    self.cues.append(self.tis)
+                    self.params["Method for Triple-Ion Stability"] = self.tis
+                    self.cues.append(self.contactangle)
+                    self.params["Contact Angle"] = self.contactangle
+                    self.cues.append(self.porelength)
+                    self.params["Pore Length"] = self.porelength
+                    self.cues.append(self.saltconc)
+                    self.params["Salt Concentration of Interest"] = self.saltconc
+                    self.cues.append(self.scaep)
+                    self.params["Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations"] = self.scaep
+                    self.cues.append(self.dl)
+                    self.params["Double Layer (DL) Calculations"] = self.dl
+                    self.cues.append(0) # End
+                # Matrix Composition
+                elif self.solventcomp == 2:
+                    accc_solvents = 0
+                    accc_salts = 0
+                    non_accc_solvents = len(self.electrolyte.solvents)
+                    non_accc_salts = len(self.electrolyte.salts)
+                    number_of_solvents = non_accc_solvents + accc_solvents
+                    number_of_salts = non_accc_salts + accc_salts
+                    assert number_of_solvents <= 5, "Number of solvents must be no greater than 5"
+                    assert number_of_salts <= 2, "Number of salts must be no greater than 2"
+                    self.cues.append(number_of_solvents)
+                    self.params["Number of Solvents"] = number_of_solvents
+                    if number_of_solvents > 2:
+                        self.cues.append(self.cmfoption)
+                        self.params["Constant Mass Fraction Option"] = self.cmfoption
+                    self.cues.append(accc_solvents)
+                    self.params["Number of ACCC Solvents"] = accc_solvents
+                    solvent_list = list(self.electrolyte.solvents.keys())
+                    if self.cmfsolventindex is None:
+                        if self.cmfoption == 1:  # CMF is enabled but no index provided
+                            raise ValueError("cmfsolventindex must be provided when cmfoption is 1. Got None.")
+                        self.cmfsolventindex = 0  # Default to 0 if CMF is not enabled
+                    if not (0 <= self.cmfsolventindex < len(solvent_list)):
+                        raise ValueError(f"cmfsolventindex must be between 0 and {len(solvent_list) - 1}. Got {self.cmfsolventindex}.")
+                    cmf_applied = False
+                    for index, solvent in enumerate(self.electrolyte.solvents.keys()):
+                        self.cues.append(self.AEM_solvents[solvent][0])  # Append solvent cue
+                        if self.cmfoption == 1 and not cmf_applied:
+                            if index == self.cmfsolventindex:
+                                is_last_solvent = (self.cmfsolventindex == len(solvent_list) - 1)
+                                self.cues.append(0 if not is_last_solvent else 1)  # CMF indicator (0 for First, 1 for Last)
+                                cmf_value = self.electrolyte.solvents[solvent] / self.electrolyte.solvent_precision
+                                self.cues.append(cmf_value)  # Append the actual mass fraction
+                                self.params["Constant Mass Fraction Solvent"] = f"{solvent}"
+                                self.params["Constant Mass Fraction Value"] = cmf_value
+                                cmf_applied = True  # Stop further CMF indicators
+                            else:
+                                self.cues.append(0)  # CMF indicator (0 for non-CMF solvents before CMF solvent)
+                    self.cues.append(number_of_salts)
+                    self.params["Number of Salts"] = number_of_salts
+                    self.cues.append(accc_salts)
+                    self.params["Number of ACCC Salts"] = accc_salts
+                    for salt in self.electrolyte.salts.keys():
+                        self.cues.append(self.AEM_salts[salt][0])  # append self.cues
+                    if number_of_salts > 1:
+                        self.cues.append(self.saltcomp)
+                        self.params["Salt Composition Proportion Mode"] = self.saltcomp
+                        if self.saltcomp == 1:
+                            for salt in self.electrolyte.salts:
+                                self.cues.append(self.electrolyte.salts[salt]) # append molalities/molarities
+                    self.cues.append(self.totalsaltconc)
+                    self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
+                    self.cues.append(self.tmin)
+                    self.params["Minimum Temperature"] = self.tmin
+                    self.cues.append(self.tmax)
+                    self.params["Maximum Temperature"] = self.tmax
+                    self.cues.append(self.stepsize)
+                    self.params["Temperature Step Size"] = self.stepsize
+                    self.cues.append(self.tis)
+                    self.params["Method for Triple-Ion Stability"] = self.tis
+                    self.cues.append(self.contactangle)
+                    self.params["Contact Angle"] = self.contactangle
+                    self.cues.append(self.porelength)
+                    self.params["Pore Length"] = self.porelength
+                    self.cues.append(self.saltconc)
+                    self.params["Salt Concentration of Interest"] = self.saltconc
+                    self.cues.append(self.scaep)
+                    self.params["Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations"] = self.scaep
+                    self.cues.append(self.dl)
+                    self.params["Double Layer (DL) Calculations"] = self.dl
+                    self.cues.append(0) # End
             # ACCC Composition Case
             elif self.accc_electrolyte is not None:
                 # All ACCC 
                 if self.electrolyte is None:
                     self.cues.append(self.solventcomp)
                     self.params["Solvent Composition"] = self.solventcomp
-                    self.cues.append(self.solventcomppropbasis)
-                    self.params["Solvent Composition Proportionality Basis"] = self.solventcomppropbasis
-                    for components in self.AEM_ACCC_solvents.values():
-                        if isinstance(components, dict):
-                            accc_solvents = len(components)  # Multiple components
-                        else:
-                            accc_solvents = 1  # Single component
-                    accc_salts =  len(self.AEM_ACCC_salts)
-                    non_accc_solvents = 0
-                    non_accc_salts = 0
-                    number_of_solvents = non_accc_solvents + accc_solvents
-                    number_of_salts = non_accc_salts + accc_salts
-                    assert number_of_solvents <= 10, "Number of solvents must be no greater than 10"
-                    assert number_of_salts <= 2, "Number of solvents must be no greater than 2"
-                    self.cues.append(number_of_solvents)
-                    self.params["Number of Solvents"] = number_of_solvents
-                    self.cues.append(accc_solvents)
-                    self.params["Number of ACCC Solvents"] = accc_solvents
-                    solvent_cue = '_'.join(self.AEM_ACCC_solvents.keys())
-                    self.matchACCCComp()
-                    self.cues.append(solvent_cue)
-                    if number_of_solvents > 1:  # check if not pure
-                            for solvent, composition in self.AEM_ACCC_solvents.items():
-                                if isinstance(composition, dict):
-                                    for component, proportion in composition.items():
-                                            self.cues.append(proportion) # append masses
-                    self.cues.append(accc_salts)
-                    self.params["Number of ACCC Salts"] = accc_salts
-                    for salt in self.AEM_ACCC_salts:
-                        self.cues.append(salt)
-                    self.cues.append(self.totalsaltconc)
-                    self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
-                    self.cues.append(self.tmin)
-                    self.params["Minimum Temperature"] = self.tmin
-                    self.cues.append(self.tmax)
-                    self.params["Maximum Temperature"] = self.tmax
-                    self.cues.append(self.stepsize)
-                    self.params["Temperature Step Size"] = self.stepsize
-                    self.cues.append(self.tis)
-                    self.params["Method for Triple-Ion Stability"] = self.tis
-                    self.cues.append(self.contactangle)
-                    self.params["Contact Angle"] = self.contactangle
-                    self.cues.append(self.porelength)
-                    self.params["Pore Length"] = self.porelength
-                    self.cues.append(self.saltconc)
-                    self.params["Salt Concentration of Interest"] = self.saltconc
-                    self.cues.append(self.scaep)
-                    self.params["Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations"] = self.scaep
-                    self.cues.append(self.dl)
-                    self.params["Double Layer (DL) Calculations"] = self.dl
-                    self.cues.append(0) # End
+                    # Single-Fixed Composition
+                    if self.solventcomp == 1:
+                        self.cues.append(self.solventcomppropbasis)
+                        self.params["Solvent Composition Proportionality Basis"] = self.solventcomppropbasis
+                        for components in self.AEM_ACCC_solvents.values():
+                            if isinstance(components, dict):
+                                accc_solvents = len(components)  # Multiple components
+                            else:
+                                accc_solvents = 1  # Single component
+                        accc_salts =  len(self.AEM_ACCC_salts)
+                        non_accc_solvents = 0
+                        non_accc_salts = 0
+                        number_of_solvents = non_accc_solvents + accc_solvents
+                        number_of_salts = non_accc_salts + accc_salts
+                        assert number_of_solvents <= 10, "Number of solvents must be no greater than 10"
+                        assert number_of_salts <= 2, "Number of solvents must be no greater than 2"
+                        self.cues.append(number_of_solvents)
+                        self.params["Number of Solvents"] = number_of_solvents
+                        self.cues.append(accc_solvents)
+                        self.params["Number of ACCC Solvents"] = accc_solvents
+                        solvent_cue = '_'.join(self.AEM_ACCC_solvents.keys())
+                        self.matchACCCComp()
+                        self.cues.append(solvent_cue)
+                        self.cues.append(accc_salts)
+                        self.params["Number of ACCC Salts"] = accc_salts
+                        for salt in self.AEM_ACCC_salts:
+                            self.cues.append(salt)
+                        self.cues.append(self.totalsaltconc)
+                        self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
+                        self.cues.append(self.tmin)
+                        self.params["Minimum Temperature"] = self.tmin
+                        self.cues.append(self.tmax)
+                        self.params["Maximum Temperature"] = self.tmax
+                        self.cues.append(self.stepsize)
+                        self.params["Temperature Step Size"] = self.stepsize
+                        self.cues.append(self.tis)
+                        self.params["Method for Triple-Ion Stability"] = self.tis
+                        self.cues.append(self.contactangle)
+                        self.params["Contact Angle"] = self.contactangle
+                        self.cues.append(self.porelength)
+                        self.params["Pore Length"] = self.porelength
+                        self.cues.append(self.saltconc)
+                        self.params["Salt Concentration of Interest"] = self.saltconc
+                        self.cues.append(self.scaep)
+                        self.params["Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations"] = self.scaep
+                        self.cues.append(self.dl)
+                        self.params["Double Layer (DL) Calculations"] = self.dl
+                        self.cues.append(0) # End
+                    # Matrix Composition
+                    elif self.solventcomp == 2:
+                        for components in self.AEM_ACCC_solvents.values():
+                            if isinstance(components, dict):
+                                accc_solvents = len(components)  # Multiple components
+                            else:
+                                accc_solvents = 1  # Single component
+                        accc_salts =  len(self.AEM_ACCC_salts)
+                        non_accc_solvents = 0
+                        non_accc_salts = 0
+                        number_of_solvents = non_accc_solvents + accc_solvents
+                        number_of_salts = non_accc_salts + accc_salts
+                        assert number_of_solvents <= 5, "Number of solvents must be no greater than 5"
+                        assert number_of_salts <= 2, "Number of salts must be no greater than 2"
+                        self.cues.append(number_of_solvents)
+                        self.params["Number of Solvents"] = number_of_solvents
+                        if number_of_solvents > 2:
+                            self.cues.append(self.cmfoption)
+                            self.params["Constant Mass Fraction Option"] = self.cmfoption
+                        self.cues.append(accc_solvents)
+                        self.params["Number of ACCC Solvents"] = accc_solvents
+                        solvent_cue = '_'.join(self.AEM_ACCC_solvents.keys())
+                        self.matchACCCComp()
+                        self.cues.append(solvent_cue)
+                        """if self.cmfsolventindex is None:
+                            if self.cmfoption == 1:  # CMF is enabled but no index provided
+                                raise ValueError("cmfsolventindex must be provided when cmfoption is 1. Got None.")
+                            self.cmfsolventindex = 0  # Default to 0 if CMF is not enabled
+                        if not (0 <= self.cmfsolventindex < len(solvent_list)):
+                            raise ValueError(f"cmfsolventindex must be between 0 and {len(solvent_list) - 1}. Got {self.cmfsolventindex}.")
+                        cmf_applied = False
+                        for index, solvent in enumerate(self.electrolyte.solvents.keys()):
+                            self.cues.append(self.AEM_solvents[solvent][0])  # Append solvent cue
+                            if self.cmfoption == 1 and not cmf_applied:
+                                if index == self.cmfsolventindex:
+                                    is_last_solvent = (self.cmfsolventindex == len(solvent_list) - 1)
+                                    self.cues.append(0 if not is_last_solvent else 1)  # CMF indicator (0 for First, 1 for Last)
+                                    cmf_value = self.electrolyte.solvents[solvent] / self.electrolyte.solvent_precision
+                                    self.cues.append(cmf_value)  # Append the actual mass fraction
+                                    self.params["Constant Mass Fraction Solvent"] = f"{solvent}"
+                                    self.params["Constant Mass Fraction Value"] = cmf_value
+                                    cmf_applied = True  # Stop further CMF indicators
+                                else:
+                                    self.cues.append(0)  # CMF indicator (0 for non-CMF solvents before CMF solvent)"""
+                        self.cues.append(accc_salts)
+                        self.params["Number of ACCC Salts"] = accc_salts
+                        for salt in self.AEM_ACCC_salts:
+                            self.cues.append(salt)
+                        if number_of_salts > 1:
+                            self.cues.append(self.saltcomp)
+                            self.params["Salt Composition Proportion Mode"] = self.saltcomp
+                            if self.saltcomp == 1:
+                                for salt in self.electrolyte.salts:
+                                    self.cues.append(self.electrolyte.salts[salt]) # append molalities/molarities
+                        self.cues.append(self.totalsaltconc)
+                        self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
+                        self.cues.append(self.tmin)
+                        self.params["Minimum Temperature"] = self.tmin
+                        self.cues.append(self.tmax)
+                        self.params["Maximum Temperature"] = self.tmax
+                        self.cues.append(self.stepsize)
+                        self.params["Temperature Step Size"] = self.stepsize
+                        self.cues.append(self.tis)
+                        self.params["Method for Triple-Ion Stability"] = self.tis
+                        self.cues.append(self.contactangle)
+                        self.params["Contact Angle"] = self.contactangle
+                        self.cues.append(self.porelength)
+                        self.params["Pore Length"] = self.porelength
+                        self.cues.append(self.saltconc)
+                        self.params["Salt Concentration of Interest"] = self.saltconc
+                        self.cues.append(self.scaep)
+                        self.params["Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations"] = self.scaep
+                        self.cues.append(self.dl)
+                        self.params["Double Layer (DL) Calculations"] = self.dl
+                        self.cues.append(0) # End
                 # ACCC with Non-ACCC 
                 if self.electrolyte is not None:
                     self.cues.append(self.solventcomp)
                     self.params["Solvent Composition"] = self.solventcomp
-                    self.cues.append(self.solventcomppropbasis)
-                    self.params["Solvent Composition Proportionality Basis"] = self.solventcomppropbasis
-                    accc_solvents = 0
-                    for components in self.AEM_ACCC_solvents.values():
-                            if components is None or components==0:
-                                accc_solvents = 0
-                            elif isinstance(components, dict):
+                    # Single-Fixed Mode
+                    if self.solventcomp == 1:
+                        self.cues.append(self.solventcomppropbasis)
+                        self.params["Solvent Composition Proportionality Basis"] = self.solventcomppropbasis
+                        accc_solvents = 0
+                        for components in self.AEM_ACCC_solvents.values():
+                                if components is None or components==0:
+                                    accc_solvents = 0
+                                elif isinstance(components, dict):
+                                    accc_solvents = len(components)  # Multiple components
+                                else:
+                                    accc_solvents = 1  # Single component
+                        accc_salts =  len(self.AEM_ACCC_salts)
+                        non_accc_solvents = len(self.electrolyte.solvents)
+                        non_accc_salts = len(self.electrolyte.salts)
+                        number_of_solvents = non_accc_solvents + accc_solvents
+                        number_of_salts = non_accc_salts + accc_salts
+                        self.cues.append(number_of_solvents)
+                        self.params["Number of Solvents"] = number_of_solvents
+                        self.cues.append(accc_solvents)
+                        self.params["Number of ACCC Solvents"] = accc_solvents
+                        # ACCC Solvents + Non-ACCC Salt
+                        if non_accc_solvents == 0 and accc_salts == 0:
+                            solvent_cue = '_'.join(self.AEM_ACCC_solvents.keys())
+                            self.matchACCCComp()
+                            self.cues.append(solvent_cue)
+                            if number_of_solvents > 1:  # check if not pure
+                                for solvent, composition in self.AEM_ACCC_solvents.items():
+                                    if isinstance(composition, dict):
+                                        for component, proportion in composition.items():
+                                                self.cues.append(proportion) # append masses
+                            self.cues.append(accc_salts)
+                            self.params["Number of ACCC Salts"] = accc_salts
+                            for salt in self.electrolyte.salts.keys():
+                                self.cues.append(self.AEM_salts[salt][0])  # append self.cues
+                        # Non-ACCC Solvents + ACCC Salt
+                        if accc_solvents == 0 and non_accc_salts == 0:
+                            for solvent in self.electrolyte.solvents.keys():
+                                self.cues.append(self.AEM_solvents[solvent][0])  # append cues
+                            if number_of_solvents > 1:  # check if not pure
+                                for solvent in self.electrolyte.solvents:
+                                    # append masses
+                                    self.cues.append(self.electrolyte.solvents[solvent])
+                            self.cues.append(number_of_salts)
+                            self.params["Number of Salts"] = number_of_salts
+                            self.cues.append(accc_salts)
+                            self.params["Number of ACCC Salts"] = accc_salts
+                            for salt in self.AEM_ACCC_salts:
+                                self.cues.append(salt)       
+                        self.cues.append(self.totalsaltconc)
+                        self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
+                        self.cues.append(self.tmin)
+                        self.params["Minimum Temperature"] = self.tmin
+                        self.cues.append(self.tmax)
+                        self.params["Maximum Temperature"] = self.tmax
+                        self.cues.append(self.stepsize)
+                        self.params["Temperature Step Size"] = self.stepsize
+                        self.cues.append(self.tis)
+                        self.params["Method for Triple-Ion Stability"] = self.tis
+                        self.cues.append(self.contactangle)
+                        self.params["Contact Angle"] = self.contactangle
+                        self.cues.append(self.porelength)
+                        self.params["Pore Length"] = self.porelength
+                        self.cues.append(self.saltconc)
+                        self.params["Salt Concentration of Interest"] = self.saltconc
+                        self.cues.append(self.scaep)
+                        self.params["Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations"] = self.scaep
+                        self.cues.append(self.dl)
+                        self.params["Double Layer (DL) Calculations"] = self.dl
+                        self.cues.append(0) # End
+                    # Matrix Mode
+                    if self.solventcomp == 2:
+                        accc_solvents = 0
+                        for components in self.AEM_ACCC_solvents.values():
+                            if isinstance(components, dict):
                                 accc_solvents = len(components)  # Multiple components
                             else:
                                 accc_solvents = 1  # Single component
-                    accc_salts =  len(self.AEM_ACCC_salts)
-                    non_accc_solvents = len(self.electrolyte.solvents)
-                    non_accc_salts = len(self.electrolyte.salts)
-                    number_of_solvents = non_accc_solvents + accc_solvents
-                    number_of_salts = non_accc_salts + accc_salts
-                    self.cues.append(number_of_solvents)
-                    self.params["Number of Solvents"] = number_of_solvents
-                    self.cues.append(accc_solvents)
-                    self.params["Number of ACCC Solvents"] = accc_solvents
-                    # ACCC Solvents + Non-ACCC Salt
-                    if non_accc_solvents == 0 and accc_salts == 0:
-                        solvent_cue = '_'.join(self.AEM_ACCC_solvents.keys())
-                        self.matchACCCComp()
-                        self.cues.append(solvent_cue)
-                        if number_of_solvents > 1:  # check if not pure
-                            for solvent, composition in self.AEM_ACCC_solvents.items():
-                                if isinstance(composition, dict):
-                                    for component, proportion in composition.items():
-                                            self.cues.append(proportion) # append masses
-                        self.cues.append(accc_salts)
-                        self.params["Number of ACCC Salts"] = accc_salts
-                        for salt in self.electrolyte.salts.keys():
-                            self.cues.append(self.AEM_salts[salt][0])  # append self.cues
-                    # Non-ACCC Solvents + ACCC Salt
-                    if accc_solvents == 0 and non_accc_salts == 0:
-                        for solvent in self.electrolyte.solvents.keys():
-                            self.cues.append(self.AEM_solvents[solvent][0])  # append cues
-                        if number_of_solvents > 1:  # check if not pure
-                            for solvent in self.electrolyte.solvents:
-                                # append masses
-                                self.cues.append(self.electrolyte.solvents[solvent])
-                        self.cues.append(number_of_salts)
-                        self.params["Number of Salts"] = number_of_salts
-                        self.cues.append(accc_salts)
-                        self.params["Number of ACCC Salts"] = accc_salts
-                        for salt in self.AEM_ACCC_salts:
-                            self.cues.append(salt)       
-                    self.cues.append(self.totalsaltconc)
-                    self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
-                    self.cues.append(self.tmin)
-                    self.params["Minimum Temperature"] = self.tmin
-                    self.cues.append(self.tmax)
-                    self.params["Maximum Temperature"] = self.tmax
-                    self.cues.append(self.stepsize)
-                    self.params["Temperature Step Size"] = self.stepsize
-                    self.cues.append(self.tis)
-                    self.params["Method for Triple-Ion Stability"] = self.tis
-                    self.cues.append(self.contactangle)
-                    self.params["Contact Angle"] = self.contactangle
-                    self.cues.append(self.porelength)
-                    self.params["Pore Length"] = self.porelength
-                    self.cues.append(self.saltconc)
-                    self.params["Salt Concentration of Interest"] = self.saltconc
-                    self.cues.append(self.scaep)
-                    self.params["Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations"] = self.scaep
-                    self.cues.append(self.dl)
-                    self.params["Double Layer (DL) Calculations"] = self.dl
-                    self.cues.append(0) # End
-            print(f"### AEM-API v1.2.0:: Input Parameters: {self.params}")
+                        accc_salts =  len(self.AEM_ACCC_salts)
+                        non_accc_solvents = len(self.electrolyte.solvents)
+                        non_accc_salts = len(self.electrolyte.salts)
+                        number_of_solvents = non_accc_solvents + accc_solvents
+                        number_of_salts = non_accc_salts + accc_salts
+                        assert number_of_solvents <= 5, "Number of solvents must be no greater than 5"
+                        assert number_of_salts <= 2, "Number of salts must be no greater than 2"
+                        self.cues.append(number_of_solvents)
+                        self.params["Number of Solvents"] = number_of_solvents
+                        if number_of_solvents > 2:
+                            self.cues.append(self.cmfoption)
+                            self.params["Constant Mass Fraction Option"] = self.cmfoption
+                        self.cues.append(accc_solvents)
+                        self.params["Number of ACCC Solvents"] = accc_solvents
+                        # ACCC Solvents + Non-ACCC Salt
+                        if non_accc_solvents == 0 and accc_salts == 0:
+                            solvent_cue = '_'.join(self.AEM_ACCC_solvents.keys())
+                            self.matchACCCComp()
+                            self.cues.append(solvent_cue)
+                            if number_of_solvents > 1:  # check if not pure
+                                for solvent, composition in self.AEM_ACCC_solvents.items():
+                                    if isinstance(composition, dict):
+                                        for component, proportion in composition.items():
+                                                self.cues.append(proportion) # append masses
+                            self.cues.append(accc_salts)
+                            self.params["Number of ACCC Salts"] = accc_salts
+                            for salt in self.electrolyte.salts.keys():
+                                self.cues.append(self.AEM_salts[salt][0])  # append self.cues
+                        # Non-ACCC Solvents + ACCC Salt
+                        if accc_solvents == 0 and non_accc_salts == 0:
+                            solvent_list = list(self.electrolyte.solvents.keys())
+                            if self.cmfsolventindex is None:
+                                if self.cmfoption == 1:  # CMF is enabled but no index provided
+                                    raise ValueError("cmfsolventindex must be provided when cmfoption is 1. Got None.")
+                                self.cmfsolventindex = 0  # Default to 0 if CMF is not enabled
+                            if not (0 <= self.cmfsolventindex < len(solvent_list)):
+                                raise ValueError(f"cmfsolventindex must be between 0 and {len(solvent_list) - 1}. Got {self.cmfsolventindex}.")
+                            cmf_applied = False
+                            for index, solvent in enumerate(self.electrolyte.solvents.keys()):
+                                self.cues.append(self.AEM_solvents[solvent][0])  # Append solvent cue
+                                if self.cmfoption == 1 and not cmf_applied:
+                                    if index == self.cmfsolventindex:
+                                        is_last_solvent = (self.cmfsolventindex == len(solvent_list) - 1)
+                                        self.cues.append(0 if not is_last_solvent else 1)  # CMF indicator (0 for First, 1 for Last)
+                                        cmf_value = self.electrolyte.solvents[solvent] / self.electrolyte.solvent_precision
+                                        self.cues.append(cmf_value)  # Append the actual mass fraction
+                                        self.params["Constant Mass Fraction Solvent"] = f"{solvent}"
+                                        self.params["Constant Mass Fraction Value"] = cmf_value
+                                        cmf_applied = True  # Stop further CMF indicators
+                                    else:
+                                        self.cues.append(0)  # CMF indicator (0 for non-CMF solvents before CMF solvent)
+                            self.cues.append(number_of_salts)
+                            self.params["Number of Salts"] = number_of_salts
+                            self.cues.append(accc_salts)
+                            self.params["Number of ACCC Salts"] = accc_salts
+                            for salt in self.AEM_ACCC_salts:
+                                self.cues.append(salt)       
+                        self.cues.append(self.totalsaltconc)
+                        self.params["Max. Total Salt Concentration of Interest"] = self.totalsaltconc
+                        self.cues.append(self.tmin)
+                        self.params["Minimum Temperature"] = self.tmin
+                        self.cues.append(self.tmax)
+                        self.params["Maximum Temperature"] = self.tmax
+                        self.cues.append(self.stepsize)
+                        self.params["Temperature Step Size"] = self.stepsize
+                        self.cues.append(self.tis)
+                        self.params["Method for Triple-Ion Stability"] = self.tis
+                        self.cues.append(self.contactangle)
+                        self.params["Contact Angle"] = self.contactangle
+                        self.cues.append(self.porelength)
+                        self.params["Pore Length"] = self.porelength
+                        self.cues.append(self.saltconc)
+                        self.params["Salt Concentration of Interest"] = self.saltconc
+                        self.cues.append(self.scaep)
+                        self.params["Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations"] = self.scaep
+                        self.cues.append(self.dl)
+                        self.params["Double Layer (DL) Calculations"] = self.dl
+                        self.cues.append(0) # End
+            print(f"### AEM-API v1.3.0:: Input Parameters: {self.params}")
     
     # Method to run the AEM model
     def runAEM(self, quiet=True):
-        print(f"### AEM-API v1.2.0:: Starting Run {self.run_id}...")
+        print(f"### AEM-API v1.3.0:: Starting Run {self.run_id}...")
         if not self.cues:
             raise ValueError("cues not populated, run generate_cues first")
         # generate input byte string
         inp = [str(cue) for cue in self.cues]
+        print(f"### AEM-API v1.3.0:: Cues: {inp}...")
         inpb = bytes('\n'.join(inp) + '\n\n', encoding="ascii")
-        # launch AEM and pass input byte string
+        # Start timing
+        start_time = time.time()
+        # Launch AEM and pass input byte string
         if quiet:
             out = sp.DEVNULL
         else:
             out = sys.stdout
         fp = os.path.join(self.AEMHomePath, self.aem_exe_filename)
         p = sp.Popen(fp, stdin=sp.PIPE, stdout=out, stderr=sp.STDOUT, cwd=self.AEMHomePath)
-        print(f"### AEM-API v1.2.0:: Run {self.run_id} Complete!")
         p.communicate(inpb)
+        #End timing and print completion with runtime
+        end_time = time.time()
+        runtime = (end_time - start_time)
+        hours = int(runtime // 3600)
+        minutes = int((runtime % 3600) // 60)
+        seconds = int(runtime % 60)
+        milliseconds = int((runtime % 1) * 1000)  # Convert fractional seconds to milliseconds
+        # Format runtime to HH:MM:SS.mmm
+        runtime_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
+        print(f"### AEM-API v1.3.0:: Run {self.run_id} Complete! (Runtime: {runtime_str})")
         self.copy_report_files()
         self.save_run_log()
         self.run_yet = True
@@ -710,7 +1023,7 @@ class AEM_API:
                 "input_params": self.params
             }
             log_file = os.path.join(self.run_output_dir, f"AEMRun-{self.run_id}-{self.run_date}-{self.run_time}-Log.json")
-            print(f"### AEM-API v1.2.0:: Run {self.run_id}: Log saved to {log_file}")
+            print(f"### AEM-API v1.3.0:: Run {self.run_id}: Log saved to {log_file}")
         else:
             log_data = {
                 "run_name": self.run_name,
@@ -722,29 +1035,44 @@ class AEM_API:
                 "input_params": self.params
             }
             log_file = os.path.join(self.run_output_dir, f"AEMRun-{self.run_name}-{self.run_date}-{self.run_time}-Log.json")
-            print(f"### AEM-API v1.2.0:: Run {self.run_name}: Log saved to {log_file}")
+            print(f"### AEM-API v1.3.0:: Run {self.run_name}: Log saved to {log_file}")
+        os.makedirs(os.path.dirname(log_file), exist_ok=True)
         with open(log_file, 'w') as f:
             json.dump(log_data, f, indent=4)
         return None
     
     # Function to copy report files to run_output_dir
     def copy_report_files(self):
-        dstfolder = os.path.join(self.run_output_dir,"Reports")
-        os.makedirs(dstfolder, exist_ok=True)
+        dstfolder = os.path.join(self.run_output_dir, "Reports")
+        try:
+            os.makedirs(dstfolder, exist_ok=True)
+            print(f"### AEM-API v1.3.0:: Run {self.run_id}: Destination folder created at {dstfolder}")
+        except OSError as e:
+            print(f"### AEM-API v1.3.0:: Run {self.run_id}: Failed to create destination folder {dstfolder}: {e}")
+            return
         for report_file in self.report_files:
             src = os.path.join(self.AEMHomePath, report_file)
-            dst = os.path.join(dstfolder, f"{report_file}.txt")
+            dst = os.path.join(dstfolder, report_file)  # Removed f-string, as it’s unnecessary
+            print(f"### AEM-API v1.3.0:: Run {self.run_id}: Copying from {src} to {dst}")
             if os.path.exists(src):
-                shutil.copy(src, dst)
+                try:
+                    shutil.copy(src, dst)
+                    print(f"### AEM-API v1.3.0:: Run {self.run_id}: Successfully copied {report_file}")
+                except OSError as e:
+                    print(f"### AEM-API v1.3.0:: Run {self.run_id}: Failed to copy {report_file}: {e}")
+                    if e.errno == errno.ENAMETOOLONG:
+                        print(f"### AEM-API v1.3.0:: Run {self.run_id}: Path too long. Consider enabling long path support on Windows.")
+                    elif e.errno == errno.EACCES:
+                        print(f"### AEM-API v1.3.0:: Run {self.run_id}: Permission denied. Check write access to {dstfolder}")
             else:
-                print(f"### AEM-API v1.2.0:: Run {self.run_id}: Report file {report_file} not found.")
-        print(f"### AEM-API v1.2.0:: Run {self.run_id}: Copied generated Report files to {dstfolder}")
-        print(f"### AEM-API v1.2.0:: Run {self.run_id}: Running AEM-PARSER on Report files and converting to .csv and .json...")
+                print(f"### AEM-API v1.3.0:: Run {self.run_id}: Report file {report_file} not found at {src}")
+        print(f"### AEM-API v1.3.0:: Run {self.run_id}: Copied generated Report files to {dstfolder}")
+        print(f"### AEM-API v1.3.0:: Run {self.run_id}: Running AEM-PARSER on Report files and converting to .csv and .json...")
         aem_convert_to_csv(dstfolder)
-        print(f"### AEM-API v1.2.0:: Run {self.run_id}: AEM-PARSER converted Report files to .csv and saved to {dstfolder}\\csv")
+        print(f"### AEM-API v1.3.0:: Run {self.run_id}: AEM-PARSER converted Report files to .csv and saved to {dstfolder}\\csv")
         aem_convert_to_json(dstfolder)
-        print(f"### AEM-API v1.2.0:: Run {self.run_id}: AEM-PARSER converted Report files to .json and saved to {dstfolder}\\json")
-    
+        print(f"### AEM-API v1.3.0:: Run {self.run_id}: AEM-PARSER converted Report files to .json and saved to {dstfolder}\\json")
+
     # Function to preview data from parsed report files
     def plot_parsed_data(self, x, y, report_number):
         plot_dir = os.path.join(self.run_output_dir, "Plots")
@@ -752,9 +1080,9 @@ class AEM_API:
         os.makedirs(plot_dir, exist_ok=True)
         output_dir = os.path.join(self.run_output_dir,"Reports")
         if self.run_name is None:
-            print(f"### AEM-API v1.2.0:: Plotting {y} v/s {x} from {report_number} for Run {self.run_id}...")
+            print(f"### AEM-API v1.3.0:: Plotting {y} v/s {x} from {report_number} for Run {self.run_id}...")
         else:
-            print(f"### AEM-API v1.2.0:: Plotting {y} v/s {x} from {report_number} for Run {self.run_name}...")
+            print(f"### AEM-API v1.3.0:: Plotting {y} v/s {x} from {report_number} for Run {self.run_name}...")
         run = aem_run()
         run.parse_run(output_dir)
         fig, ax = plt.subplots(figsize=(20, 6))
@@ -763,7 +1091,9 @@ class AEM_API:
             x_plot = [d[x] for d in s.data]
             y_plot = [d[y] for d in s.data]
             # Generate label with information about solvents, salts, and temperature
-            label = f"Solvents: {s.solvents_str_no_comma()}\nSalts: {s.salts_str_no_comma()}\nTemperature: {s.temperature_str()}"
+            label = (f"Solvent(s): {s.solvents_str_no_comma()}\n"
+                     f"Salt(s): {s.salts_str_no_comma()}\n"
+                     f"Temperature: {s.temperature_str()}")
             # Plot with scientific formatting
             ax.plot(x_plot, y_plot, label=label)
         # Setting titles and labels
@@ -780,7 +1110,7 @@ class AEM_API:
         plt.show()
         plt.close()
         if self.run_name is None:
-            print(f"### AEM-API v1.2.0:: {y} v/s {x} from {report_number} for Run {self.run_id} saved as a data plot to '{plot_path}'")
+            print(f"### AEM-API v1.3.0:: {y} v/s {x} from {report_number} for Run {self.run_id} saved as a data plot to '{plot_path}'")
         else:
-            print(f"### AEM-API v1.2.0:: {y} v/s {x} from {report_number} for Run {self.run_name} saved as a data plot to '{plot_path}'")
-        print(f"### AEM-API v1.2.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
+            print(f"### AEM-API v1.3.0:: {y} v/s {x} from {report_number} for Run {self.run_name} saved as a data plot to '{plot_path}'")
+        print(f"### AEM-API v1.3.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")

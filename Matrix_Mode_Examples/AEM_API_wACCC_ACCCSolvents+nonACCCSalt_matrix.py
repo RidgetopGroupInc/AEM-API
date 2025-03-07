@@ -1,11 +1,12 @@
 # ============================================================================
 """               Advanced Electrolyte Model (AEM) API Demo                """
-""" © 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved """
+""" © 2025 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved """
 # ============================================================================
 
 ## Import Libraries and AEM API Classes
 import os
 import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from AEM_API import ElectrolyteComposition, ACCCElectrolyteComposition, AEM_API
 
 ## AEM Directories
@@ -13,17 +14,24 @@ homedir = os.path.expanduser("~")
 AEM_HOME_PATH = rf'{homedir}\Documents\AEM\CLI'   # Path to AEM/CLI/ (Update path if different!)
 AEM_PROGRAM_NAME = "aem-2243m-d-accc.exe"
 
+## Define Non-ACCC Electrolyte Composition - Solvents and Salts
+solvents = {}
+salts = {'LiPF6': 1}
+electrolyte = ElectrolyteComposition.by_mass_fraction_and_molality(solvents=solvents, salts=salts)
+
 ## Define ACCC Electrolyte Composition - Solvents and Salts
-solvents = {'EC': (100)}
-salts = {'LiPF6_w_EC': 100}
-accc_electrolyte = ACCCElectrolyteComposition(solvents=solvents, salts=salts)
+accc_solvents = {'EC_EMC': (70, 30)}
+accc_salts = {}
+accc_electrolyte = ACCCElectrolyteComposition(solvents=accc_solvents, salts=accc_salts)
 
 ## Define Input Parameters
-output_dir = 'AEM-API-Output\\Demos' # Output Directory for AEM API Runs
-run_name = 'w_ACCC_allACCCcomp'      # Run Name
+output_dir = 'AEM-API-Output\\Demos'                    # Output Directory for AEM API Runs
+run_name = 'wACCC_ACCCSolvents+nonACCCSalt_matrix'      # Run Name
 
-solventcomp = 1                # Solvent Composition: 1 (Single Fixed Composition) or 2 (Larger Matrix)
-solventcomppropbasis = 2       # Solvent Composition Proportionality Basis: 1 (Volume) or 2 (Mass)
+solventcomp = 2                # Solvent Composition: 1 (Single Fixed Composition) or 2 (Larger Matrix)
+cmfoption = None               # Set CMF for 1 Solvent if Solvents > 2: None, 0 (No) or 1 (Yes)
+cmfsolventindex = None         # Set CMF Solvent Index
+solventcomppropbasis = None    # Solvent Composition Proportionality Basis: 1 (Volume) or 2 (Mass)
 saltcomp = 1                   # Salt Composition [Salts > 1]: 1 (Single Fixed Composition) or 2 (Several Proportions)
 totalsaltconc = 1              # Max. Total Salt Concentration of Interest
 tmin = 10                      # Minimum Temperature: -30deg to 60 deg (Do not exceed 100deg)
@@ -37,8 +45,11 @@ scaep = 0                      # Surface-Charge Attenuated Electrolyte Permittiv
 dl = 0                         # Double Layer (DL) Calculations: 0 (No) or 1 (Yes)
 
 ## Initialize the AEM-API Object
-aem = AEM_API(accc_electrolyte=accc_electrolyte,
+aem = AEM_API(electrolyte=electrolyte,
+              accc_electrolyte=accc_electrolyte,
               solventcomp=solventcomp,
+              cmfoption=cmfoption,
+              cmfsolventindex=cmfsolventindex,
               solventcomppropbasis=solventcomppropbasis,
               saltcomp=saltcomp,
               totalsaltconc=totalsaltconc, 
