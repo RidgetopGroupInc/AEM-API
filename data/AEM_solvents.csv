@@ -1,5 +1,5 @@
 cue,name,string
-1, water,water
+1, water,WATER
 2, propylene carbonate (PC),PC
 3, ethylene carbonate (EC),EC
 4, gamma-butyrolactone (GBL),GBL
@@ -31,18 +31,18 @@ cue,name,string
 30, methyl propionate (MP),MP
 31, methyl formate (MF),MF
 32, ethyl formate (EF),EF
-33, propionitrile (PrN),PrN
+33, propionitrile (PrN),PRN
 34, sulfolane (TMS),TMS
 35, trimethyl phosphate (TMP),TMP
 36,acetonitrile (ACN),ACN
 37,methyl monofluoroacetate,M1FA
 38,methyl difluoroacetate,M2FA
 39,vinylene carbonate,VC
-40,n-propyl proprionate,nPP
+40,n-propyl proprionate,NPP
 41,butyronitrile (BN),BN
-42,n-butyl acetate (nBA), nBA
-43, n-butyl propionate (nBP), nBP
-44, n-butyl butyrate (nBB), nBB
+42,n-butyl acetate (nBA), NBA
+43, n-butyl propionate (nBP), NBP
+44, n-butyl butyrate (nBB), NBB
 45, vinyl ethylene carbonate (VEC), VEC
 47," Tris(2,2,2-trifluoroethyl)-orthoformate (TFEO)",TFEO
 48, succinonitrile (SN), SN
@@ -58,3 +58,7 @@ cue,name,string
 60, dimethyl sulfite (DMS), DMS
 61, isovaleronitrile (IVN), IVN
 62, isobutyronitrile (IBN), IBN
+63, fluorobenzene (FBZ), FBZ
+64," 7,8-Dihydroxyphenazine-2-sulfonic acid (DHPS)", DHPS
+65," 1,8-dihydroxy-2,7-dicarboxymethyl-9,10-anthraquinone (DCDHAQ)", DCDHAQ
+66," 2,2,2-Trifluoro-N,N-dimethylacetamide (FDMA)", FDMA

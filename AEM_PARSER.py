@@ -887,8 +887,9 @@ def parseReport01(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report01Item()
         r.version = report01.version
@@ -901,7 +902,7 @@ def parseReport01(reportPath):
             report01.target_salt_comp = r.salts_str_no_comma()
         if r.solvents_str_no_comma() == report01.target_solvent_comp and r.salts_str_no_comma() == report01.target_salt_comp:
             try:
-                table_section = pieces[1].split('-----------------------------------------------------------------------------------------------------------------------------------------------------')[1]
+                table_section = pieces[1].split('------------------------------------------------------------------------------------------------------------------------------------------------------------------------')[1]
             except IndexError:
                 table_section = pieces[1]
             foo = table_section.splitlines()
@@ -916,7 +917,7 @@ def parseReport01(reportPath):
                         r01var_2242[2]: r.temperature
                     })
                     data.append(j)
-                elif len(d) == 18 and report01.version == '2.24.3':
+                elif len(d) == 18:
                     j = {r01var[i]: parse_float(d[i-3]) if i > 2 else d[i-3] for i in range(3, len(r01var))}
                     j.update({
                         r01var[0]: r.solvents_str_no_comma(),
@@ -937,8 +938,9 @@ def parseReport02(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report02Item()
         r.version = report02.version
@@ -979,8 +981,9 @@ def parseReport03(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report03Item()
         r.version = report03.version
@@ -1027,8 +1030,9 @@ def parseReport04(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report04Item()
         r.version = report04.version
@@ -1069,8 +1073,9 @@ def parseReport05(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report05Item()
         r.version = report05.version
@@ -1098,7 +1103,7 @@ def parseReport05(reportPath):
                         r05var_2242[2]: r.temperature
                     })
                     data.append(j)
-                elif len(d) == 18 and report05.version == '2.24.3':
+                elif len(d) == 18:
                     j = {r05var[i]: parse_float(d[i-3]) if i > 2 else d[i-3] for i in range(3, len(r05var))}
                     j.update({
                         r05var[0]: r.solvents_str_no_comma(),
@@ -1119,8 +1124,9 @@ def parseReport06(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report06Item()
         r.version = report06.version
@@ -1179,8 +1185,9 @@ def parseReport10(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report10Item()
         r.version = report10.version
@@ -1233,8 +1240,9 @@ def parseReport11(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report11Item()
         r.version = report11.version
@@ -1275,8 +1283,9 @@ def parseReport12(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report12Item()
         r.version = report12.version
@@ -1304,7 +1313,7 @@ def parseReport12(reportPath):
                         r12var_2242[2]: r.temperature
                     })
                     data.append(j)
-                elif len(d) == 22 and report12.version == '2.24.3':
+                elif len(d) == 22:
                     j = {r12var[i]: parse_float(d[i-3]) if i > 2 else d[i-3] for i in range(3, len(r12var))}
                     j.update({
                         r12var[0]: r.solvents_str_no_comma(),
@@ -1325,8 +1334,9 @@ def parseReport13(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report13Item()
         r.version = report13.version
@@ -1367,8 +1377,9 @@ def parseReport14(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report14Item()
         r.version = report14.version
@@ -1409,8 +1420,9 @@ def parseReport15(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report15Item()
         r.version = report15.version
@@ -1451,8 +1463,9 @@ def parseReport16(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report16Item()
         r.version = report16.version
@@ -1493,8 +1506,9 @@ def parseReport17(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report17Item()
         r.version = report17.version
@@ -1535,8 +1549,9 @@ def parseReport18(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report18Item()
         r.version = report18.version
@@ -1577,8 +1592,9 @@ def parseReport19(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report19Item()
         r.version = report19.version
@@ -1619,8 +1635,9 @@ def parseReport20(reportPath):
         text = f.read()
     contents = text.split('alt = ')
     contents.pop(0)
-    first_item = None
+    
     for content in contents:
+        first_item = None
         data = []
         r = report20Item()
         r.version = report20.version

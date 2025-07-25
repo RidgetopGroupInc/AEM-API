@@ -21,6 +21,9 @@ The <b>Advanced Electrolyte Model (AEM) Application Program Interface (API)</b> 
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
+- [Documentation](#documentation)
+   -[AEM_API](#aem_api)
+
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -49,7 +52,7 @@ To get a local copy up and running follow these simple steps.
 
 - Python 3.7 or higher
 - git 2.46.0 or higher
-
+- AEM-2251M-D-ACCC-DLM.exe or newer
 ### Installation
 
 1. Clone the repo
@@ -69,7 +72,96 @@ To get a local copy up and running follow these simple steps.
    python -m Single_Fixed_Mode_Examples.AEM_API_wACCC_nonACCCcomp
    python -m Matrix_Mode_Examples.AEM_API_wACCC_nonACCCcomp_4solvents_2salts_wCMF_matrix
    ```
-   
+<!-- DOCUMENTATION -->
+## Documentation
+
+### AEM_API
+The **AEM_API Class** is how you define the inputs for an AEM run. 
+
+These are the parameters:
+1. AEMHomePath (required): Full Path to AEM/CLI folder (string)
+2. AEMProgramName (required): Name of the AEM executable in the CLI Folder i.e. **AEM-2251M-D-ACCC-DLM.exe** (string)
+3. *run_name* (required): Name of folder the output will be saved to after running **runAEM()** (string)
+4. *output_dir* (required): directory where the output folder and files will be created and saved (string)
+5. *electrolyte* (optional): **ElectrolyteComposition Class** object that contains nonACCC/Library Solvents and Salts to be used (ElectrolyteComposition)
+6. *number_of_total_solvents* (required): number of total solvents (ACCC and nonACCC solvents) to be used (int)
+7. *number_of_total_salts* (required): number of total salts (ACCC and nonACCC salts) to be used (int)
+8. *number_of_accc_solvents* (optional): number of ACCC solvents to be used (int)
+9. *number_of_accc_salts* (optional): number of ACCC salts to be used (int)
+10. *accc_solvent_class* (optional): Name of the ACCC Solvent Class file in the CLI folder i.e *EC_EMC* for *ACCC Inputs (Solvent Class)--EC_EMC.txt* (string)
+11. *accc_salt_class* (optional): Name of the ACCC Salt Class file in the CLI folder i.e *LiBOB_w_PC_EA* for *ACCC Inputs (Salt Class)--LiBOB_w_PC_EA.txt* (string)
+12. *accc_solvent_class_for_second_salt* (optional): Name of the ACCC Solvent Class required if you are using Dual Salts with an ACCC Solvent. (string)
+13. *accc_salt_class_2* (optional): Name of second ACCC Salt Class being used if applicable (string)
+14. *accc_solvent_proportions* (optional): ACCC Solvent proportions (in same oreder that the solvents are defined in ACCC Solvent Class File) (float[])
+15. *accc_salt_proportions* (optional): ACCC Salt proportions with accc_salt_class proportion first and accc_salt_class_2 proportion second if applicable (float[])
+16. *solventcomp* (required): Solvent Composition Mode. 1 (Single Fixed Composition) or 2 (Larger Matrix) (int)
+17. *solventcomppropbasis* (required): Solvent Composition Proportionality Basis: 1 (Volume) or 2 (Mass) for Single Fixed Composition (int)
+18. *saltcomp* (optional): Salt Composition [number_of_total_salts > 1]: 1 (Single Fixed Composition) or 2 (Several Proportions) (int)
+19. *saltconcmode* (required): Salt Concentration Mode:  1 (Default: typical range covering several salt molal concentration. 2 (dilute solution conditions (molal step size 0.001) covering 0.1m total salt.)) (int)
+20. *totalsaltconc* (optional): Max Total Salt Concentration of Interest (molal) (Required if salt concentration mode is 1) (int)
+21. *tmin* (required): Minimum Temperature (°C): -30°C to 80°C (difference from tmax must be greater than 20) (float)
+22. *tmax* (required): Maximum Temperature (°C): -50°C to 100°C (difference from tmin must be greater than 20) (float)
+23. *stepsize* (required): Temperature Stepsize (°C): 5 or 10 (int)
+24. *tis* (required): Triple-Ion Stability Method: 1 (default) or 2 (inequalities are automatically determined) (int)
+25. *contactangle* (required): Input contact angle 0° to 90° (float)
+26. *porelength* (required): Total pore length. 0.1 to 50µm (float)
+27. *saltconc* (required): Input Salt Concentration of Interest: 0.1 to Max. Salt Conc. (molal) float
+28. *scaep* (required): Surface-Charge Attenuated Electrolyte Permittivity (SCAEP) Calculations: 0 (No) or 1 (Yes) (int)
+29. *scaep_pulse* (optional): SCAEP Type of pulse condition 1: Discharge 2: Charge (int)
+29. *scaep_cellvoltage* (optional): SCAEP Cell Voltage of Interest (float)
+30. *scaep_bulksaltconc* (optional): SCAEP Bulk Salt Concentration in molal (float)
+31. *scaep_thickness* (optional): SCAEP Thickness of Cathode(Discharge) or Anode (Charge) SEI (Angstroms) (float)
+32. *scaep_permittivity* (optional): SCAEP Relative Permittivity of Cathode(Discharge) or Anode (Charge) SEI (%) (float)
+33. *scaep_porosity* (optional): SCAEP Porosity of Cathode(Discharge) or Anode (Charge) SEI (float)
+34. *dl* (required): Perform Double Layer (DL) Calculations Calculations: 0 (No) or 1 (Yes) (int)
+33. *dl_saltconc* (optional): DL pre-pulse salt concentration (Molar) (float)
+33. *dl_currentdensity* (optional): DL current density (A/cm^2) (float)
+33. *dl_temperature* (optional): DL temperature of interest (°C) (float)
+
+Functions:
+1. generate_cues(self): once object is created, run this to create script to run
+2. runAEM(self): This will perform the AEM run and place output in the output_dir
+3. plot_parse_data(self, x, y, report_number): x and y are strings corresponding to columns for the reports, and report_number is a string (Report01-20)
+
+   a. Here is a list of the string corresponding to the columns for the reports:
+
+      * Report01:  'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'c2_eff_trans', 'wt_fr_salt', 'mole_fr_salt', 'density', 'visc','sig1', 'sig2','salt_dissoc_ip', 'dissoc_ti'
+
+      * Report02: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'cmeff', 'alphanet', 'cation', 'anion', 'ip', 'ti', 'fcip', 'gamma','y', 'y_bar', 'osmotic_coeff_molal', 'osmotic_coeff_molar', 'solvent_activity', 'kip', 'kti', 'ksol', 'adj_solvent_activity', 'adj_phi', 'adj_gamma', 'fvpd'
+
+      * Report03: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'gfe_cation', 'gfe_anion', 'se_cation', 'se_anion', 'rp_solution','rp_solvent', 'alpha1', 'alpha3', 'energy_sum', 'energy_ave', 'desolve_t'
+
+      * Report04: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'volsoft', 'fcomp', 'fsolv', 'fdiff12', 'd_plus', 'd_minus','d_minus_bare', 'dnernst','dapp', 'd_ip', 'd_ti', 'd_solvent', 'thermodynamic_factor'
+
+      * Report05: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'c2_eff_trans', 'c2_pseudo', 'density', 'visc', 'rational_act_coef_y','diffusion_coeff', 'specific_conductivity', 't_plus', 't_minus', 'fhop_plus', 'fhop_minus', 'pos_atm', 'walden_log_1_over_visc','walden_log_cond', 'walden_product', 'thermal_conductivity'
+
+      * Report06: 'solvent_comp', 'salt_comp', 'temperature', 'salt_molality', 'one_over_visc', 'k_t_plus', 'diffusivity_bulk_elec', 'li_step_full','li_step_solv', 'kip', 'kti', 'ksolv', 'solvent_activity', 'gamma'
+
+      * Report10: 'solvent_comp', 'salt_comp', 'temperature', 'surface_charge_density', 'cell_voltage_at_start_of_pulse', 'salt_concentration_basis', 'pulse_type', 'electrolyte_rel_perm_at_salt_conc', 'dipole_moment_data', 'solvent_diameter', 'equivalent_charge_on_solvent_dipole', 'sei_thickness', 'sei_porosity', 'sei_relative_permittivity', 'r', 'eff_surface_ch_density_at_r', 'solution_rel_perm_electrolyte_plus_sch', 'ave_r_solution_rel_perm_electrolyte_plus_sch', 'electric_field_per_sch', 'repulsive_energy_sch_to_dipole', 'cell_voltage'
+
+      * Report11: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'cation_eff_dia', 'anion_eff_dia', 's_plus_th', 's_minus_th', 'solvent_avail_thermo', 'solvent_avail_msa_hs', 'solvent_be_to_cation', 'solvent_be_to_anion', 'communal_solvation_factor', 'debye_relaxation_time', 'fraction_of_free_liquid_in_solvent'
+
+      * Report12: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'cation_solvent_one', 'cation_solvent_two', 'cation_solvent_three', 'cation_solvent_four', 'cation_solvent_five', 'cation_solvent_six', 'cation_solvent_seven', 'cation_solvent_eight', 'cation_solvent_nine', 'cation_solvent_ten', 'anion_solvent_one', 'anion_solvent_two', 'anion_solvent_three', 'anion_solvent_four', 'anion_solvent_five', 'anion_solvent_six', 'anion_solvent_seven', 'anion_solvent_eight', 'anion_solvent_nine', 'anion_solvent_ten'
+
+      * Report13: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'cation_factor_one', 'cation_factor_two', 'cation_factor_three', 'cation_factor_four', 'cation_factor_five', 'cation_factor_six', 'cation_factor_seven', 'anion_factor_one', 'anion_factor_two', 'anion_factor_three', 'anion_factor_four', 'anion_factor_five', 'anion_factor_six', 'anion_factor_seven'
+
+      * Report14: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'full_li_step_parameter', 'partial_li_step_parameter'
+
+      * Report 15: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', '10_v1', '10_t1', '20_v1', '20_t1', '40_v1', '40_t1', '80_v1','80_t1', '160_v1', '160_t1', '320_v1', '320_t1', 'vsolv', 'tsolv'
+
+      * Report 16: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'surface_tension', 'surface_ten_viscosity', '0.02_micron', '0.05_micron', '0.1_micron', '0.2_micron', '0.5_micron', '1_micron', '2_micron', '5_micron', '10_micron', '20_micron'
+
+      * Report 17: 'solvent_comp', 'salt_comp', 'temperature', 'time_s', '0.02_micron', '0.05_micron', '0.1_micron', '0.2_micron','0.5_micron', '1_micron', '2_micron', '5_micron', '10_micron', '20_micron'
+
+      * Report 18: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'be1', 'be2', 'be3', 'be4', 'be5', 'be6', 'be_sum', 'dt1', 'dt2', 'dt3', 'dt4', 'dt5', 'dt6', 'dt_sum', 't_lambda'
+
+      * Report 19: 'solvent_comp', 'salt_comp', 'temperature', 'm2', 'c2', 'be1', 'be2', 'be3', 'be4', 'be5', 'be6', 'be_sum', 'dt1','dt2', 'dt3', 'dt4', 'dt5', 'dt6', 'dt_sum', 't_lambda'
+
+      * Report 20: 'solvent_comp', 'salt_comp', 'temperature', 'm2_bulk', 'm2_non_cs', 'm2_cs', 'y_free', 'y_non_cs', 'y_cs','cs_factor', 'n_s_plus_bulk', 'n_s_plus_cs', 'n_s_plus_ave', 'be_plus_bulk', 'be_plus_cs', 'be_plus_ave','n_s_cs_0', 'n_s_cs_ave', 'n_s_non_cs', 'ratio_of_n_solv_cs_to_m2_cs'
+
+
+
+
 <!-- ROADMAP -->
 ## Roadmap
 See the [open issues](https://github.com/RidgetopGroupInc/AEM-API/issues) for a list of proposed features (and known issues).
