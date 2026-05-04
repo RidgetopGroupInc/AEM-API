@@ -12,7 +12,7 @@ from AEM_API import ElectrolyteComposition, AEM_API
 ## AEM Directories
 homedir = os.path.expanduser("~")
 AEM_HOME_PATH = rf'{homedir}\Documents\AEM\CLI'   # Path to AEM/CLI/ (Update path if different!)
-AEM_PROGRAM_NAME = "AEM-2251M-D-ACCC-DLM.exe"
+AEM_PROGRAM_NAME = "AEM-2261M-D-ACCC-DLM.exe"
 
 output_dir = 'AEM-API-Output\\Demos'              # Output Directory for AEM API Runs
 run_name = 'Ex3_Fixed_Solvents_Dual_Salt_Single_Composition_SCAEP'            # Run Name

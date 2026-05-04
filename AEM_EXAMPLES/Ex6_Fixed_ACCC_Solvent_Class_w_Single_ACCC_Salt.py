@@ -12,7 +12,7 @@ from AEM_API import ElectrolyteComposition, AEM_API
 ## AEM Directories
 homedir = os.path.expanduser("~")
 AEM_HOME_PATH = rf'{homedir}\Documents\AEM\CLI'   # Path to AEM/CLI/ (Update path if different!)
-AEM_PROGRAM_NAME = "AEM-2251M-D-ACCC-DLM.exe"
+AEM_PROGRAM_NAME = "AEM-2261M-D-ACCC-DLM.exe"
 
 output_dir = 'AEM-API-Output\\Demos'              # Output Directory for AEM API Runs
 run_name = 'Ex6_Fixed_ACCC_Solvent_Class_w_Single_Salt'# Run Name
@@ -21,7 +21,7 @@ run_name = 'Ex6_Fixed_ACCC_Solvent_Class_w_Single_Salt'# Run Name
 solvents = {} 
 # No Non-ACCC Solvents are used
 
-salts = {'LiPF6': 1.0}
+salts = {}
 # salts defined as LiPF6 at 1.0 (100%), proportion really only used if multiple salts defined and
 # composition proportion mode is set to single fixed proportion
 electrolyte = ElectrolyteComposition.translate_electrolyte(solvents=solvents, salts=salts)
@@ -33,7 +33,9 @@ number_of_accc_solvents = 2         # Number of solvents defined in the above AC
 accc_solvent_proportions = [30, 70] # ACCC Solvent proportions (in same oreder that the solvents are defined in ACCC Solvent Class File)
 number_of_total_solvents = 2   # Total number of solvents (ACCC and Non-ACCC Solvents)
 number_of_total_salts = 1      # Total number of salts (ACCC and Non-ACCC Salts)
-number_of_accc_salts = 0       # Number of ACCC Salts (None used in this example)
+number_of_accc_salts = 1       # Number of ACCC Salts
+accc_salt_class = 'LiPF6_w_EC_EMC'  # ACCC Inputs (Salt Class)--LiPF6_w_EC_EMC.txt
+
 
 ## Define Input Parameters
 solventcomp = 1                # Solvent Composition: 1 (Single Fixed Composition) or 2 (Larger Matrix)
@@ -53,6 +55,7 @@ dl = 0                         # Double Layer (DL) Calculations: 0 (No) or 1 (Ye
 
 aem = AEM_API(  electrolyte=electrolyte,
                 accc_solvent_class= accc_solvent_class,
+                accc_salt_class = accc_salt_class,
                 number_of_total_solvents = number_of_total_solvents,
                 number_of_accc_solvents = number_of_accc_solvents,
                 number_of_total_salts = number_of_total_salts,

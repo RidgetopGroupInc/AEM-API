@@ -12,7 +12,7 @@ from AEM_API import ElectrolyteComposition, AEM_API
 ## AEM Directories
 homedir = os.path.expanduser("~")
 AEM_HOME_PATH = rf'{homedir}\Documents\AEM\CLI'   # Path to AEM/CLI/ (Update path if different!)
-AEM_PROGRAM_NAME = "AEM-2251M-D-ACCC-DLM.exe"
+AEM_PROGRAM_NAME = "AEM-2261M-D-ACCC-DLM.exe"
 
 output_dir = 'AEM-API-Output\\Demos'              # Output Directory for AEM API Runs
 run_name = 'Ex7_Fixed_Solvent_Class_w_Single_ACCC_Salt'# Run Name
@@ -33,7 +33,7 @@ accc_salt_proportions = [50]            # proportion for accc salt in mixture
 number_of_accc_solvents = 0             # Number of solvents defined in the above ACCC Solvent Class
 number_of_total_solvents = 1            # Total number of solvents (ACCC and Non-ACCC Solvents)
 number_of_total_salts = 2               # Total number of salts (ACCC and Non-ACCC Salts)
-number_of_accc_salts = 1                # Number of ACCC Salts (None used in this example)
+number_of_accc_salts = 1                # Number of ACCC Salts
 
 ## Define Input Parameters
 solventcomp = 1                # Solvent Composition: 1 (Single Fixed Composition) or 2 (Larger Matrix)

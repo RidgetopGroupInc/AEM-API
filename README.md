@@ -52,7 +52,7 @@ To get a local copy up and running follow these simple steps.
 
 - Python 3.7 or higher
 - git 2.46.0 or higher
-- AEM-2251M-D-ACCC-DLM.exe or newer
+- AEM-2261M-D-ACCC-DLM.exe or newer
 ### Installation
 
 1. Clone the repo

@@ -113,7 +113,7 @@ class ElectrolyteComposition:
             salts_normalized = ElectrolyteComposition.normalize_salt_dictionary(salts, salt_decimals)
             parts.extend([salts_normalized.keys(), vals2str(salts_normalized.values())])
         else:
-            parts.extend['','']
+            parts.extend(['', ''])
         return delim1.join([delim2.join(x) for x in parts])
 
     @staticmethod
@@ -228,7 +228,7 @@ class ElectrolyteComposition:
         salts = cls.normalize_salt_dictionary({salt: salts_moles[salt] / (sum(list(solvents_mass.values())) / 1000) for salt in salts_moles}, salt_decimals)
         cid = cls.dicts_to_CompositionID(solvents=solvents, salts=salts, solvent_precision=solvent_precision, salt_decimals=salt_decimals)
         d = {"solvents": solvents, "salts": salts, "CompositionID": cid, "solvent_precision": solvent_precision, "salt_decimals": salt_decimals}
-        print(f"### AEM-API v1.3.0:: CompositionID: {cid}")
+        print(f"### AEM-API v1.4.0:: CompositionID: {cid}")
         return cls(**d, specified_from=specified_from)
 
 
@@ -245,7 +245,7 @@ class AEM_API:
         "Report6 -- Activation Energies",
         "Report7 -- Large-Scale Simulation Optimization",
         "Report8 -- Non-convergent cases",
-        "Report9 --  Double-Layer Regions transport analysis",
+        "Report9 -- Double-Layer Regions transport analysis",
         "Report10 -- Electrode surface-charge effects",
         "Report11 -- Summary of Ion Solvation Quantities",
         "Report12 -- Preferential Ion Solvation",
@@ -256,7 +256,8 @@ class AEM_API:
         "Report17 -- Percent pore length filled over time",
         "Report18 -- Ligand-wise cation desolvation energy and time",
         "Report19 -- Ligand-wise cation desolvation energy and time (accounting for CS)",
-        "Report20 -- Terms relating to structure and Communal Ion Solvation (CS)"
+        "Report20 -- Terms relating to structure and Communal Ion Solvation (CS)",
+        "Report21 -- Properties used in DFN Modeling"
     ]
     # Constructor to initialize AEM_API with electrolyte composition and read AEM data
     def __init__(self, 
@@ -365,7 +366,7 @@ class AEM_API:
         else:
             self.run_output_dir = os.path.join(self.output_dir, f"AEMAPIRun_{self.run_name}_{self.run_date}_{self.run_time}")
         os.makedirs(self.run_output_dir, exist_ok=True)
-    print(f"### AEM-API v1.3.0:: Starting Program!")
+    print(f"### AEM-API v1.4.0:: Starting Program!")
     
     # Method to read AEM data from CSV files
     def read_AEM_data(self, salt_csv, solvent_csv):
@@ -401,7 +402,7 @@ class AEM_API:
 
     # Method to run the AEM model
     def runDLMExecutable(self):
-        print(f"### AEM-API v1.3.0:: Checking ACCC Access from DLM ...")
+        print(f"### AEM-API v1.4.0:: Checking ACCC Access from DLM ...")
         fp = os.path.join(API_HOME_PATH, DLM_EXECUTABLE)
         # Run the executable with the 'check' argument
         p = sp.Popen([fp, 'check'], shell=True, stdout=sp.PIPE, stderr=sp.STDOUT, cwd=self.AEMHomePath)
@@ -410,12 +411,12 @@ class AEM_API:
         stdout = stdout.decode('utf-8').strip()  # Decode and strip any extra whitespace/newlines
         # Log the output and return it
         if stdout == '1':
-            print(f"### AEM-API v1.3.0:: ACCC Access Invalid!")
+            print(f"### AEM-API v1.4.0:: ACCC Access Invalid!")
         elif stdout == '6':
-            print(f"### AEM-API v1.3.0:: ACCC Access Valid")
+            print(f"### AEM-API v1.4.0:: ACCC Access Valid")
         else:
-            print(f"### AEM-API v1.3.0:: Unknown output: {stdout}")
-        print(f"### AEM-API v1.3.0:: ACCC Access Check Complete!")
+            print(f"### AEM-API v1.4.0:: Unknown output: {stdout}")
+        print(f"### AEM-API v1.4.0:: ACCC Access Check Complete!")
         return stdout
     def accc_generate_solvent_cues(self):
         number_of_solvents = len(self.electrolyte.solvents)
@@ -691,12 +692,13 @@ class AEM_API:
 
     # Method to run the AEM model
     def runAEM(self, quiet=True):
-        print(f"### AEM-API v1.3.0:: Starting Run {self.run_id}...")
+        print(f"### AEM-API v1.4.0:: Starting Run {self.run_id}...")
+        self.reset_report_txt_files(self.AEMHomePath) #just to be safe, reset report txt files in AEMHomePath
         if not self.cues:
             raise ValueError("cues not populated, run generate_cues first")
         # generate input byte string
         inp = [str(cue) for cue in self.cues]
-        print(f"### AEM-API v1.3.0:: Cues: {inp}...")
+        print(f"### AEM-API v1.4.0:: Cues: {inp}...")
         inpb = bytes('\n'.join(inp) + '\n\n', encoding="ascii")
         # Start timing
         start_time = time.time()
@@ -717,7 +719,7 @@ class AEM_API:
         milliseconds = int((runtime % 1) * 1000)  # Convert fractional seconds to milliseconds
         # Format runtime to HH:MM:SS.mmm
         runtime_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}.{milliseconds:03d}"
-        print(f"### AEM-API v1.3.0:: Run {self.run_id} Complete! (Runtime: {runtime_str})")
+        print(f"### AEM-API v1.4.0:: Run {self.run_id} Complete! (Runtime: {runtime_str})")
         self.copy_report_files()
         self.save_run_log()
         self.run_yet = True
@@ -734,7 +736,7 @@ class AEM_API:
                 "input_params": self.params
             }
             log_file = os.path.join(self.run_output_dir, f"AEMRun-{self.run_id}-{self.run_date}-{self.run_time}-Log.json")
-            print(f"### AEM-API v1.3.0:: Run {self.run_id}: Log saved to {log_file}")
+            print(f"### AEM-API v1.4.0:: Run {self.run_id}: Log saved to {log_file}")
         else:
             log_data = {
                 "run_name": self.run_name,
@@ -746,43 +748,120 @@ class AEM_API:
                 "input_params": self.params
             }
             log_file = os.path.join(self.run_output_dir, f"AEMRun-{self.run_name}-{self.run_date}-{self.run_time}-Log.json")
-            print(f"### AEM-API v1.3.0:: Run {self.run_name}: Log saved to {log_file}")
+            print(f"### AEM-API v1.4.0:: Run {self.run_name}: Log saved to {log_file}")
         os.makedirs(os.path.dirname(log_file), exist_ok=True)
         with open(log_file, 'w') as f:
             json.dump(log_data, f, indent=4)
         return None
     
+    # Function to make txt name for report files
+    def generate_report_txt_name(self, report_file):
+        match (report_file):
+            case "Report1 -- Summary of Key Properties":
+                return "Report01 -- Summary of Key Properties.txt"
+            case "Report2 -- Ion association populations and other thermodynamic terms":
+                return "Report02 -- Ion association populations and other thermodynamic terms.txt"
+            case "Report3 -- Ion solvation energies, permittivity and cation desolvation":
+                return "Report03 -- Ion solvation energies, permittivity and cation desolvation.txt"
+            case "Report4 -- Diffusivities and selected conductivity terms":
+                return "Report04 -- Diffusivities and selected conductivity terms.txt"
+            case "Report5 -- Summary of Transport Properties and Walden analysis":
+                return "Report05 -- Summary of Transport Properties and Walden analysis.txt"
+            case "Report6 -- Activation Energies":
+                return "Report06 -- Activation Energies.txt"
+            case "Report7 -- Large-Scale Simulation Optimization":
+                return "Report07 -- Large-Scale Simulation Optimization.txt"
+            case "Report8 -- Non-convergent cases":
+                return "Report08 -- Non-convergent cases.txt"
+            case "Report9 -- Double-Layer Regions transport analysis":
+                return "Report09 -- Double-Layer Regions transport analysis.txt"
+            case "Report10 -- Electrode surface-charge effects":
+                return "Report10 -- Electrode surface-charge effects.txt"
+            case "Report11 -- Summary of Ion Solvation Quantities":
+                return "Report11 -- Summary of Ion Solvation Quantities.txt"
+            case "Report12 -- Preferential Ion Solvation":
+                return "Report12 -- Preferential Ion Solvation.txt"
+            case "Report13 -- Conductivity Factors":
+                return "Report13 -- Conductivity Factors.txt"
+            case "Report14 -- Li-STEP Terms":
+                return "Report14 -- Li-STEP Terms.txt"
+            case "Report15 -- Cation transit under Faradaic conditions":
+                return "Report15 -- Cation transit under Faradaic conditions.txt"
+            case "Report16 -- Surface Tension and pore filling time over salt conc":
+                return "Report16 -- Surface Tension and pore filling time over salt conc.txt"
+            case "Report17 -- Percent pore length filled over time":
+                return "Report17 -- Percent pore length filled over time.txt"
+            case "Report18 -- Ligand-wise cation desolvation energy and time":
+                return "Report18 -- Ligand-wise cation desolvation energy and time.txt"
+            case "Report19 -- Ligand-wise cation desolvation energy and time (accounting for CS)":
+                return "Report19 -- Ligand-wise cation desolvation energy and time (accounting for CS).txt"
+            case "Report20 -- Terms relating to structure and Communal Ion Solvation (CS)":
+                return "Report20 -- Terms relating to structure and Communal Ion Solvation (CS).txt"
+            case "Report21 -- Properties used in DFN Modeling":
+                return "Report21 -- Properties used in DFN Modeling.txt"
+            case _:
+                return report_file
+
+    # Function to reset generated report txt files in a directory
+    def reset_report_txt_files(self, directory):
+        print(f"### AEM-API v1.4.0:: Run {self.run_id}: Resetting report txt files in {directory}...")
+        try:
+            os.makedirs(directory, exist_ok=True)
+        except OSError as e:
+            print(f"### AEM-API v1.4.0:: Run {self.run_id}: Failed to access directory {directory}: {e}")
+            return
+
+        for rfile in self.report_files:
+            file_path = os.path.join(directory, rfile)
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                    #print(f"### AEM-API v1.4.0:: Run {self.run_id}: Deleted existing file {file_path}")
+                except OSError as e:
+                    print(f"### AEM-API v1.4.0:: Run {self.run_id}: Failed to delete {file_path}: {e}")
+                    continue
+            try:
+                with open(file_path, "w", encoding="utf-8"):
+                    pass
+                #print(f"### AEM-API v1.4.0:: Run {self.run_id}: Created empty file {file_path}")
+            except OSError as e:
+                print(f"### AEM-API v1.4.0:: Run {self.run_id}: Failed to create empty file {file_path}: {e}")
+
     # Function to copy report files to run_output_dir
     def copy_report_files(self):
         dstfolder = os.path.join(self.run_output_dir, "Reports")
         try:
             os.makedirs(dstfolder, exist_ok=True)
-            print(f"### AEM-API v1.3.0:: Run {self.run_id}: Destination folder created at {dstfolder}")
+            print(f"### AEM-API v1.4.0:: Run {self.run_id}: Destination folder created at {dstfolder}")
         except OSError as e:
-            print(f"### AEM-API v1.3.0:: Run {self.run_id}: Failed to create destination folder {dstfolder}: {e}")
+            print(f"### AEM-API v1.4.0:: Run {self.run_id}: Failed to create destination folder {dstfolder}: {e}")
             return
         for report_file in self.report_files:
+            txtName = self.generate_report_txt_name(report_file)
             src = os.path.join(self.AEMHomePath, report_file)
-            dst = os.path.join(dstfolder, report_file)  # Removed f-string, as it’s unnecessary
-            print(f"### AEM-API v1.3.0:: Run {self.run_id}: Copying from {src} to {dst}")
+            dst = os.path.join(dstfolder, txtName)  # Removed f-string, as it’s unnecessary
+            print(f"### AEM-API v1.4.0:: Run {self.run_id}: Copying from {src} to {dst}")
             if os.path.exists(src):
                 try:
                     shutil.copy(src, dst)
-                    print(f"### AEM-API v1.3.0:: Run {self.run_id}: Successfully copied {report_file}")
+                    print(f"### AEM-API v1.4.0:: Run {self.run_id}: Successfully copied {report_file}")
                 except OSError as e:
-                    print(f"### AEM-API v1.3.0:: Run {self.run_id}: Failed to copy {report_file}: {e}")
+                    print(f"### AEM-API v1.4.0:: Run {self.run_id}: Failed to copy {report_file}: {e}")
                     if e.errno == errno.ENAMETOOLONG:
-                        print(f"### AEM-API v1.3.0:: Run {self.run_id}: Path too long. Consider enabling long path support on Windows.")
+                        print(f"### AEM-API v1.4.0:: Run {self.run_id}: Path too long. Consider enabling long path support on Windows.")
                     elif e.errno == errno.EACCES:
-                        print(f"### AEM-API v1.3.0:: Run {self.run_id}: Permission denied. Check write access to {dstfolder}")
+                        print(f"### AEM-API v1.4.0:: Run {self.run_id}: Permission denied. Check write access to {dstfolder}")
             else:
-                print(f"### AEM-API v1.3.0:: Run {self.run_id}: Report file {report_file} not found at {src}")
-        print(f"### AEM-API v1.3.0:: Run {self.run_id}: Copied generated Report files to {dstfolder}")
-        print(f"### AEM-API v1.3.0:: Run {self.run_id}: Running AEM-PARSER on Report files and converting to .csv and .json...")
+                print(f"### AEM-API v1.4.0:: Run {self.run_id}: Report file {report_file} not found at {src}")
+        print(f"### AEM-API v1.4.0:: Run {self.run_id}: Copied generated Report files to {dstfolder}")
+        print(f"### AEM-API v1.4.0:: Run {self.run_id}: Running AEM-PARSER on Report files and converting to .csv and .json...")
         aem_convert_to_csv(dstfolder)
-        print(f"### AEM-API v1.3.0:: Run {self.run_id}: AEM-PARSER converted Report files to .csv and saved to {dstfolder}\\csv")
+        print(f"### AEM-API v1.4.0:: Run {self.run_id}: AEM-PARSER converted Report files to .csv and saved to {dstfolder}\\csv")
         aem_convert_to_json(dstfolder)
-        print(f"### AEM-API v1.3.0:: Run {self.run_id}: AEM-PARSER converted Report files to .json and saved to {dstfolder}\\json")
+        print(f"### AEM-API v1.4.0:: Run {self.run_id}: AEM-PARSER converted Report files to .json and saved to {dstfolder}\\json")
+    
+    
+
 
     # Function to preview data from parsed report files
     def plot_parsed_data(self, x, y, report_number):
@@ -791,9 +870,9 @@ class AEM_API:
         os.makedirs(plot_dir, exist_ok=True)
         output_dir = os.path.join(self.run_output_dir,"Reports")
         if self.run_name is None:
-            print(f"### AEM-API v1.3.0:: Plotting {y} v/s {x} from {report_number} for Run {self.run_id}...")
+            print(f"### AEM-API v1.4.0:: Plotting {y} v/s {x} from {report_number} for Run {self.run_id}...")
         else:
-            print(f"### AEM-API v1.3.0:: Plotting {y} v/s {x} from {report_number} for Run {self.run_name}...")
+            print(f"### AEM-API v1.4.0:: Plotting {y} v/s {x} from {report_number} for Run {self.run_name}...")
         run = aem_run()
         run.parse_run(output_dir)
         fig, ax = plt.subplots(figsize=(20, 6))
@@ -821,8 +900,8 @@ class AEM_API:
         plt.show()
         plt.close()
         if self.run_name is None:
-            print(f"### AEM-API v1.3.0:: {y} v/s {x} from {report_number} for Run {self.run_id} saved as a data plot to '{plot_path}'")
+            print(f"### AEM-API v1.4.0:: {y} v/s {x} from {report_number} for Run {self.run_id} saved as a data plot to '{plot_path}'")
         else:
-            print(f"### AEM-API v1.3.0:: {y} v/s {x} from {report_number} for Run {self.run_name} saved as a data plot to '{plot_path}'")
-        print(f"### AEM-API v1.3.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
+            print(f"### AEM-API v1.4.0:: {y} v/s {x} from {report_number} for Run {self.run_name} saved as a data plot to '{plot_path}'")
+        print(f"### AEM-API v1.4.0:: End of Program! (© 2024 Ridgetop Group, Inc. and Adarsh Dave (CMU), All Rights Reserved)")
 
